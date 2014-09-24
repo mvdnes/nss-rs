@@ -80,27 +80,10 @@ impl Crypter
             let mut key_item = sec::SECItem::new(sec::siBuffer, key);
             let mut iv_item = sec::SECItem::new(sec::siBuffer, iv);
 
-            let slot =
-            {
-                let s = pk11::PK11_GetBestSlot(self.mechanism, ptr::null_mut());
-                if s.is_null() { return Err(::ffi::nspr::get_error_text()); }
-                s
-            };
-            let sym_key =
-            {
-                let s = pk11::PK11_ImportSymKey(slot, self.mechanism, pk11::OriginUnwrap, mode.to_ffi(), &mut key_item, ptr::null_mut());
-                if s.is_null() { return Err(::ffi::nspr::get_error_text()); }
-                s
-            };
-
-            let sec_param = pk11::PK11_ParamFromIV(self.mechanism, &mut iv_item);
-
-            let context =
-            {
-                let s = pk11::PK11_CreateContextBySymKey(self.mechanism, mode.to_ffi(), sym_key, sec_param);
-                if s.is_null() { return Err(::ffi::nspr::get_error_text()); }
-                s
-            };
+            let slot = try_ptr!(pk11::PK11_GetBestSlot(self.mechanism, ptr::null_mut()));
+            let sym_key = try_ptr!(pk11::PK11_ImportSymKey(slot, self.mechanism, pk11::OriginUnwrap, mode.to_ffi(), &mut key_item, ptr::null_mut()));
+            let sec_param = try_ptr!(pk11::PK11_ParamFromIV(self.mechanism, &mut iv_item));
+            let context = try_ptr!(pk11::PK11_CreateContextBySymKey(self.mechanism, mode.to_ffi(), sym_key, sec_param));
 
             self.context = Some(context);
 
