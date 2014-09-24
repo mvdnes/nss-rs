@@ -1,5 +1,6 @@
-use super::sec;
-use libc::c_void;
+use ffi::sec;
+use ffi::sec::SECStatus;
+use libc::{c_void, c_int, c_uint};
 
 #[allow(non_camel_case_types)]
 #[repr(u32)]
@@ -41,11 +42,16 @@ pub struct PK11SymKey;
 extern "C"
 {
     pub fn PK11_GetBestSlot(typ: CK_MECHANISM_TYPE, wincx: *mut c_void) -> *mut PK11SlotInfo;
+    pub fn PK11_FreeSlot(slot: *mut PK11SlotInfo);
     pub fn PK11_ImportSymKey(slot: *mut PK11SlotInfo, cipher: CK_MECHANISM_TYPE, origin: PK11Origin,
                              operation: CK_ATTRIBUTE_TYPE, key: *mut sec::SECItem, wincx: *mut c_void)
         -> *mut PK11SymKey;
+    pub fn PK11_FreeSymKey(key: *mut PK11SymKey);
     pub fn PK11_ParamFromIV(typ: CK_MECHANISM_TYPE, iv: *mut sec::SECItem) -> *mut sec::SECItem;
     pub fn PK11_CreateContextBySymKey(typ: CK_MECHANISM_TYPE, operation: CK_ATTRIBUTE_TYPE,
                                       symKey: *mut PK11SymKey, param: *mut sec::SECItem) -> *mut PK11Context;
     pub fn PK11_DestroyContext(context: *mut PK11Context, freeit: bool);
+    pub fn PK11_CipherOp(context: *mut PK11Context, buf_out: *mut u8, outlen: *mut c_int,
+                         maxout: c_int, buf_in: *const u8, inlen: c_int) -> SECStatus;
+    pub fn PK11_DigestFinal(context: *mut PK11Context, data: *mut u8, outlen: *mut c_uint, length: c_uint) -> SECStatus;
 }

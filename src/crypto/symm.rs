@@ -1,10 +1,22 @@
 use ffi::{pk11, sec};
-use std::ptr;
+use std::{ptr, mem};
 
 pub enum Mode
 {
     Encrypt,
     Decrypt,
+}
+
+impl Mode
+{
+    fn to_ffi(&self) -> pk11::CK_ATTRIBUTE_TYPE
+    {
+        match *self
+        {
+            Encrypt => pk11::CKA_ENCRYPT,
+            Decrypt => pk11::CKA_DECRYPT,
+        }
+    }
 }
 
 #[allow(non_camel_case_types)]
@@ -31,8 +43,6 @@ impl Type
 pub struct Crypter
 {
     mechanism: pk11::CK_MECHANISM_TYPE,
-    key: Vec<u8>,
-    iv: Vec<u8>,
     context: Option<*mut pk11::PK11Context>,
 }
 
@@ -49,36 +59,100 @@ impl Crypter
            {
                mechanism: mechanism,
                context: None,
-               key: Vec::new(),
-               iv: Vec::new(),
            })
     }
 
-    pub fn init(&mut self, mode: Mode, key: Vec<u8>, iv: Vec<u8>)
+    fn free_context(&mut self)
     {
-        self.key = key;
-        self.iv = iv;
-        let mut key_item = unsafe { sec::SECItem::new(sec::siBuffer, self.key.as_slice()) };
-        let mut iv_item = unsafe { sec::SECItem::new(sec::siBuffer, self.iv.as_slice()) };
-        let slot = unsafe
+        let context = mem::replace(&mut self.context, None);
+        match context
         {
-            let s = pk11::PK11_GetBestSlot(self.mechanism, ptr::null_mut());
-            if s.is_null() { return; }
-            s
-        };
-        let symkey = unsafe
+            None => {},
+            Some(c) => unsafe { pk11::PK11_DestroyContext(c, true); },
+        }
+    }
+
+    pub fn init(&mut self, mode: Mode, key: &[u8], iv: &[u8]) -> Result<(), String>
+    {
+        self.free_context();
+        unsafe
         {
-            let s = pk11::PK11_ImportSymKey(slot, self.mechanism, pk11::OriginUnwrap, pk11::CKA_ENCRYPT, &mut key_item, ptr::null_mut());
-            if s.is_null() { return; }
-            s
+            let mut key_item = sec::SECItem::new(sec::siBuffer, key);
+            let mut iv_item = sec::SECItem::new(sec::siBuffer, iv);
+
+            let slot =
+            {
+                let s = pk11::PK11_GetBestSlot(self.mechanism, ptr::null_mut());
+                if s.is_null() { return Err(::ffi::nspr::get_error_text()); }
+                s
+            };
+            let sym_key =
+            {
+                let s = pk11::PK11_ImportSymKey(slot, self.mechanism, pk11::OriginUnwrap, mode.to_ffi(), &mut key_item, ptr::null_mut());
+                if s.is_null() { return Err(::ffi::nspr::get_error_text()); }
+                s
+            };
+
+            let sec_param = pk11::PK11_ParamFromIV(self.mechanism, &mut iv_item);
+
+            let context =
+            {
+                let s = pk11::PK11_CreateContextBySymKey(self.mechanism, mode.to_ffi(), sym_key, sec_param);
+                if s.is_null() { return Err(::ffi::nspr::get_error_text()); }
+                s
+            };
+
+            self.context = Some(context);
+
+            sec::SECItem::free(sec_param);
+            pk11::PK11_FreeSymKey(sym_key);
+            pk11::PK11_FreeSlot(slot);
+
+            Ok(())
+        }
+    }
+
+    pub fn update(&mut self, in_buf: &[u8]) -> Result<Vec<u8>, String>
+    {
+        let context = match self.context
+        {
+            None => return Err("Not initialized".to_string()),
+            Some(c) => c,
         };
+        let mut out_buf = Vec::with_capacity(in_buf.len() + 128);
+        unsafe
+        {
+            let mut outlen = 0;
+            let status = pk11::PK11_CipherOp(context, out_buf.as_mut_ptr(), &mut outlen, out_buf.capacity() as ::libc::c_int, in_buf.as_ptr(), in_buf.len() as ::libc::c_int);
+            try!(status.to_result());
+            out_buf.set_len(outlen as uint);
+        }
+        Ok(out_buf)
+    }
 
-        let sec_param = unsafe { pk11::PK11_ParamFromIV(self.mechanism, &mut iv_item) };
+    pub fn final(&mut self) -> Result<Vec<u8>, String>
+    {
+        let context = match self.context
+        {
+            None => return Err("Not initialized".to_string()),
+            Some(c) => c,
+        };
+        let mut out_buf = Vec::with_capacity(2048);
+        unsafe
+        {
+            let mut outlen = 0;
+            let status = pk11::PK11_DigestFinal(context, out_buf.as_mut_ptr(), &mut outlen, out_buf.capacity() as ::libc::c_uint);
+            try!(status.to_result());
+            out_buf.set_len(outlen as uint);
+        }
+        Ok(out_buf)
+    }
+}
 
-        self.context = Some(
-            unsafe { pk11::PK11_CreateContextBySymKey(self.mechanism, pk11::CKA_ENCRYPT, symkey, sec_param) }
-            );
-
-        unsafe { sec::SECItem::free(sec_param); }
+impl Drop for Crypter
+{
+    fn drop(&mut self)
+    {
+        self.free_context();
     }
 }

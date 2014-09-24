@@ -1,4 +1,27 @@
+use ffi::nspr;
 use libc::{c_uint, c_uchar};
+
+#[must_use]
+#[repr(C)]
+pub enum SECStatus
+{
+    SECWouldBlock = -2,
+    SECFailure = -1,
+    SECSuccess = 0
+}
+
+impl SECStatus
+{
+    pub fn to_result(&self) -> Result<(), String>
+    {
+        match *self
+        {
+            SECSuccess => Ok(()),
+            SECFailure => Err(nspr::get_error_text()),
+            SECWouldBlock => fail!("Unexpectedly got SECWouldBlock"),
+        }
+    }
+}
 
 #[repr(C)]
 pub enum SECItemType
