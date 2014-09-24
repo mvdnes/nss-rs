@@ -1,6 +1,7 @@
 #![feature(phase)]
 #![feature(macro_rules)]
 
+extern crate sync;
 extern crate libc;
 #[phase(plugin, link)] extern crate log;
 

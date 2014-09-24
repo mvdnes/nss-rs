@@ -1,22 +1,22 @@
-use std::sync::atomic;
+use sync::mutex::{StaticMutex, MUTEX_INIT};
 use ffi::{nss, nspr};
 
-static mut NSS_INITED : atomic::AtomicBool = atomic::INIT_ATOMIC_BOOL;
+static mut INITLOCK: StaticMutex = MUTEX_INIT;
+static mut INIT_STATUS : bool = false;
 
 pub fn init() -> Result<(), String>
 {
     unsafe
     {
-        if NSS_INITED.compare_and_swap(false, true, atomic::SeqCst) == false
+        let _guard = INITLOCK.lock();
+        if INIT_STATUS == true { return Ok(()); }
+
+        nspr::PR_Init(nspr::PR_SYSTEM_THREAD, nspr::PR_PRIORITY_NORMAL, 0);
+        match nss::NSS_NoDB_Init(::std::ptr::null_mut()).to_result()
         {
-            nspr::PR_Init(nspr::PR_USER_THREAD, nspr::PR_PRIORITY_NORMAL, 0);
-            try!(nss::NSS_NoDB_Init(::std::ptr::null_mut()).to_result());
+            Ok(..) => { INIT_STATUS = true; Ok(()) },
+            Err(e) => Err(e),
         }
-        else
-        {
-            warn!("init called in initialized state");
-        }
-        Ok(())
     }
 }
 
@@ -24,16 +24,19 @@ pub fn close() -> Result<(), String>
 {
     unsafe
     {
-        if NSS_INITED.compare_and_swap(true, false, atomic::SeqCst) == true
+        let _guard = INITLOCK.lock();
+        if INIT_STATUS == false { return Ok(()); }
+
+        match nss::NSS_Shutdown().to_result()
         {
-            try!(nss::NSS_Shutdown().to_result());
-            nspr::PR_Cleanup();
+            Ok(..) =>
+            {
+                nspr::PR_Cleanup();
+                INIT_STATUS = false;
+                Ok(())
+            },
+            Err(e) => Err(e),
         }
-        else
-        {
-            warn!("close called in non-initialized state");
-        }
-        Ok(())
     }
 }
 
@@ -41,9 +44,8 @@ pub fn close() -> Result<(), String>
 mod test
 {
     #[test]
-    fn init_and_close()
+    fn init()
     {
         super::init().unwrap();
-        super::close().unwrap();
     }
 }
