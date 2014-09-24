@@ -38,11 +38,21 @@ impl Type
             _ => None,
         }
     }
+
+    pub fn key_len(&self) -> uint
+    {
+        match *self
+        {
+            AES_128_ECB
+            | AES_128_CBC => 16
+        }
+    }
 }
 
 pub struct Crypter
 {
-    mechanism: pk11::CK_MECHANISM_TYPE,
+    pad: bool,
+    typ: Type,
     context: Option<*mut pk11::PK11Context>,
 }
 
@@ -50,16 +60,22 @@ impl Crypter
 {
     pub fn new(t: Type, pad: bool) -> Result<Crypter, String>
     {
-        let mechanism = match t.to_ffi(pad)
+        match t.to_ffi(pad)
         {
-            Some(m) => m,
+            Some(..) => {},
             None => return Err("Unsupported type/padding combination".to_string()),
         };
         Ok(Crypter
            {
-               mechanism: mechanism,
+               pad: pad,
+               typ: t,
                context: None,
            })
+    }
+
+    fn mech(&self) -> pk11::CK_MECHANISM_TYPE
+    {
+        self.typ.to_ffi(self.pad).unwrap()
     }
 
     fn free_context(&mut self)
@@ -75,15 +91,22 @@ impl Crypter
     pub fn init(&mut self, mode: Mode, key: &[u8], iv: &[u8]) -> Result<(), String>
     {
         self.free_context();
+
+        let needed_key_len = self.typ.key_len();
+        if key.len() != needed_key_len
+        {
+            return Err(format!("Invalid key length. Should be {} bytes.", needed_key_len));
+        }
+
         unsafe
         {
             let mut key_item = sec::SECItem::new(sec::siBuffer, key);
             let mut iv_item = sec::SECItem::new(sec::siBuffer, iv);
 
-            let slot = try_ptr!(pk11::PK11_GetBestSlot(self.mechanism, ptr::null_mut()));
-            let sym_key = try_ptr!(pk11::PK11_ImportSymKey(slot, self.mechanism, pk11::OriginUnwrap, mode.to_ffi(), &mut key_item, ptr::null_mut()));
-            let sec_param = try_ptr!(pk11::PK11_ParamFromIV(self.mechanism, &mut iv_item));
-            let context = try_ptr!(pk11::PK11_CreateContextBySymKey(self.mechanism, mode.to_ffi(), sym_key, sec_param));
+            let slot = try_ptr!(pk11::PK11_GetBestSlot(self.mech(), ptr::null_mut()));
+            let sym_key = try_ptr!(pk11::PK11_ImportSymKey(slot, self.mech(), pk11::OriginUnwrap, mode.to_ffi(), &mut key_item, ptr::null_mut()));
+            let sec_param = try_ptr!(pk11::PK11_ParamFromIV(self.mech(), &mut iv_item));
+            let context = try_ptr!(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key, sec_param));
 
             self.context = Some(context);
 
