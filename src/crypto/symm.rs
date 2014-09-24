@@ -24,6 +24,8 @@ pub enum Type
 {
     AES_128_ECB,
     AES_128_CBC,
+    DES_ECB,
+    DES_CBC,
 }
 
 impl Type
@@ -35,6 +37,9 @@ impl Type
             (AES_128_ECB, false) => Some(pk11::CKM_AES_ECB),
             (AES_128_CBC, false) => Some(pk11::CKM_AES_CBC),
             (AES_128_CBC, true) => Some(pk11::CKM_AES_CBC_PAD),
+            (DES_ECB, false) => Some(pk11::CKM_DES_ECB),
+            (DES_CBC, false) => Some(pk11::CKM_DES_CBC),
+            (DES_CBC, true) => Some(pk11::CKM_DES_CBC_PAD),
             _ => None,
         }
     }
@@ -44,7 +49,9 @@ impl Type
         match *self
         {
             AES_128_ECB
-            | AES_128_CBC => 16
+            | AES_128_CBC => 16,
+            DES_ECB
+            | DES_CBC => 8, // 56 bits, one bit per byte is parity
         }
     }
 }

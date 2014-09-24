@@ -6,6 +6,9 @@ use libc::{c_void, c_int, c_uint};
 #[repr(u32)]
 pub enum CK_MECHANISM_TYPE
 {
+    CKM_DES_ECB     = 0x0000_0121,
+    CKM_DES_CBC     = 0x0000_0122,
+    CKM_DES_CBC_PAD = 0x0000_0125,
     CKM_AES_ECB     = 0x0000_1081,
     CKM_AES_CBC     = 0x0000_1082,
     CKM_AES_CBC_PAD = 0x0000_1085,
