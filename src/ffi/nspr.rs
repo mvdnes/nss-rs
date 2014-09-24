@@ -1,5 +1,3 @@
-//#[allow(non_camel_case_types)]
-
 use libc::c_uint;
 
 #[repr(C)]
