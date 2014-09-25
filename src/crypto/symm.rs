@@ -75,12 +75,12 @@ pub struct Crypter
 
 impl Crypter
 {
-    pub fn new(t: Type, pad: bool) -> Result<Crypter, String>
+    pub fn new(t: Type, pad: bool) -> ::NSSResult<Crypter>
     {
         match t.to_ffi(pad)
         {
             Some(..) => {},
-            None => return Err("Unsupported type/padding combination".to_string()),
+            None => return Err(::ffi::nspr::SEC_ERROR_INVALID_ALGORITHM),
         };
 
         try!(::nss::init());
@@ -108,14 +108,14 @@ impl Crypter
         }
     }
 
-    pub fn init(&mut self, mode: Mode, key: &[u8], iv: &[u8]) -> Result<(), String>
+    pub fn init(&mut self, mode: Mode, key: &[u8], iv: &[u8]) -> ::NSSResult<()>
     {
         self.free_context();
 
         let needed_key_len = self.typ.key_len();
         if key.len() != needed_key_len
         {
-            return Err(format!("Invalid key length. Should be {} bytes.", needed_key_len));
+            return Err(::ffi::nspr::SEC_ERROR_INVALID_KEY);
         }
 
         unsafe
@@ -138,11 +138,11 @@ impl Crypter
         }
     }
 
-    pub fn update(&mut self, in_buf: &[u8]) -> Result<Vec<u8>, String>
+    pub fn update(&mut self, in_buf: &[u8]) -> ::NSSResult<Vec<u8>>
     {
         let context = match self.context
         {
-            None => return Err("Not initialized".to_string()),
+            None => return Err(::ffi::nspr::SEC_ERROR_NOT_INITIALIZED),
             Some(c) => c,
         };
         let mut out_buf = Vec::with_capacity(in_buf.len() + 128);
@@ -156,11 +156,11 @@ impl Crypter
         Ok(out_buf)
     }
 
-    pub fn final(&mut self) -> Result<Vec<u8>, String>
+    pub fn final(&mut self) -> ::NSSResult<Vec<u8>>
     {
         let context = match self.context
         {
-            None => return Err("Not initialized".to_string()),
+            None => return Err(::ffi::nspr::SEC_ERROR_NOT_INITIALIZED),
             Some(c) => c,
         };
         let mut out_buf = Vec::with_capacity(2048);

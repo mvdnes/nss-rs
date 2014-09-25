@@ -4,7 +4,7 @@ use ffi::{nss, nspr};
 static mut INITLOCK: StaticMutex = MUTEX_INIT;
 static mut INIT_STATUS : bool = false;
 
-pub fn init() -> Result<(), String>
+pub fn init() -> ::NSSResult<()>
 {
     unsafe
     {
@@ -20,7 +20,7 @@ pub fn init() -> Result<(), String>
     }
 }
 
-pub fn close() -> Result<(), String>
+pub fn close() -> ::NSSResult<()>
 {
     unsafe
     {

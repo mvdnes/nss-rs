@@ -5,7 +5,7 @@ macro_rules! try_ptr(
         ({
             if $e.is_null()
             {
-                return Err(::ffi::nspr::get_error_text());
+                return Err(::ffi::nspr::get_error_code());
             }
             $e
         })

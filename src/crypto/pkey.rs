@@ -67,7 +67,7 @@ pub struct RSAPrivateKey
 
 impl RSAPrivateKey
 {
-    pub fn load(data: &[u8]) -> Result<RSAPrivateKey, String>
+    pub fn load(data: &[u8]) -> ::NSSResult<RSAPrivateKey>
     {
         try!(::nss::init());
         unsafe
@@ -83,7 +83,7 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn gen(key_size_bits: uint) -> Result<RSAPrivateKey, String>
+    pub fn gen(key_size_bits: uint) -> ::NSSResult<RSAPrivateKey>
     {
         try!(::nss::init());
         unsafe
@@ -101,7 +101,7 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn save(&self) -> Result<Vec<u8>, String>
+    pub fn save(&self) -> ::NSSResult<Vec<u8>>
     {
         unsafe
         {
@@ -121,13 +121,13 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> Result<Vec<u8>, String>
+    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> ::NSSResult<Vec<u8>>
     {
         let public = try!(RSAPublicKey::from_private(self));
         public.encrypt(padding, data)
     }
 
-    pub fn decrypt(&self, padding: RSAPadding, data: &[u8]) -> Result<Vec<u8>, String>
+    pub fn decrypt(&self, padding: RSAPadding, data: &[u8]) -> ::NSSResult<Vec<u8>>
     {
         unsafe
         {
@@ -163,7 +163,7 @@ pub struct RSAPublicKey
 
 impl RSAPublicKey
 {
-    pub fn load(data: &[u8]) -> Result<RSAPublicKey, String>
+    pub fn load(data: &[u8]) -> ::NSSResult<RSAPublicKey>
     {
         try!(::nss::init());
         unsafe
@@ -177,7 +177,7 @@ impl RSAPublicKey
         }
     }
 
-    pub fn save(&self) -> Result<Vec<u8>, String>
+    pub fn save(&self) -> ::NSSResult<Vec<u8>>
     {
         unsafe
         {
@@ -196,7 +196,7 @@ impl RSAPublicKey
         }
     }
 
-    pub fn from_private(input: &RSAPrivateKey) -> Result<RSAPublicKey, String>
+    pub fn from_private(input: &RSAPrivateKey) -> ::NSSResult<RSAPublicKey>
     {
         unsafe
         {
@@ -205,7 +205,7 @@ impl RSAPublicKey
         }
     }
 
-    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> Result<Vec<u8>, String>
+    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> ::NSSResult<Vec<u8>>
     {
         unsafe
         {

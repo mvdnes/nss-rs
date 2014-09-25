@@ -7,6 +7,9 @@ extern crate libc;
 
 pub use nss::{init, close};
 
+pub type NSSError = ffi::nspr::PRError;
+pub type NSSResult<T> = Result<T, NSSError>;
+
 mod ffi;
 mod nss;
 mod util;

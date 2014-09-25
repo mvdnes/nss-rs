@@ -446,27 +446,10 @@ pub enum PRError
     SEC_ERROR_APPLICATION_CALLBACK_ERROR = (-0x2000 + 178),
 }
 
-fn get_error_code() -> PRError
+pub fn get_error_code() -> PRError
 {
     let code = unsafe { PR_GetError() };
     FromPrimitive::from_i32(code).unwrap_or(UNKNOWN)
-}
-
-pub fn get_error_text() -> String
-{
-    let len = unsafe { PR_GetErrorTextLength() };
-    if len == 0 { return format!("{}", get_error_code()); }
-    let mut res = Vec::with_capacity(len as uint);
-    unsafe
-    {
-        let actual_len = PR_GetErrorText(res.as_mut_ptr());
-        res.set_len(actual_len as uint);
-    }
-    match String::from_utf8(res)
-    {
-        Ok(string) => format!("{1} ({0})", get_error_code(), string),
-        Err(..) => "Error message was invalid UTF-8".to_string(),
-    }
 }
 
 #[link(name="nspr4")]
@@ -476,6 +459,4 @@ extern "C"
                    maxPTDs: c_uint);
     pub fn PR_Cleanup() -> PRStatus;
     fn PR_GetError() -> i32;
-    fn PR_GetErrorTextLength() -> i32;
-    fn PR_GetErrorText(text: *mut u8) -> i32;
 }

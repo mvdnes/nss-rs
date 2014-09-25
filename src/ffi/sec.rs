@@ -14,12 +14,12 @@ pub enum SECStatus
 
 impl SECStatus
 {
-    pub fn to_result(&self) -> Result<(), String>
+    pub fn to_result(&self) -> ::NSSResult<()>
     {
         match *self
         {
             SECSuccess => Ok(()),
-            SECFailure => Err(nspr::get_error_text()),
+            SECFailure => Err(nspr::get_error_code()),
             SECWouldBlock => fail!("Unexpectedly got SECWouldBlock"),
         }
     }

@@ -7,7 +7,7 @@ extern crate nss;
 
 use nss::crypto::symm;
 
-fn doit() -> Result<(), String>
+fn doit() -> nss::NSSResult<()>
 {
     let mut crypt = try!(symm::Crypter::new(symm::DES_CBC, true));
 
