@@ -114,7 +114,7 @@ impl RSAPrivateKey
 
     pub fn key_len(&self) -> uint
     {
-        match RSAPublicKey::from_private(self)
+        match self.get_public()
         {
             Err(..) => 0,
             Ok(public) => public.key_len(),
@@ -123,7 +123,7 @@ impl RSAPrivateKey
 
     pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> ::NSSResult<Vec<u8>>
     {
-        let public = try!(RSAPublicKey::from_private(self));
+        let public = try!(self.get_public());
         public.encrypt(padding, data)
     }
 
@@ -141,6 +141,15 @@ impl RSAPrivateKey
                                         &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint).to_result());
             out.set_len(outlen as uint);
             Ok(out)
+        }
+    }
+
+    pub fn get_public(&self) -> ::NSSResult<RSAPublicKey>
+    {
+        unsafe
+        {
+            let mypub = try_ptr!(pk11::SECKEY_ConvertToPublicKey(self.key));
+            Ok(RSAPublicKey { key: mypub })
         }
     }
 }
@@ -193,15 +202,6 @@ impl RSAPublicKey
         unsafe
         {
             pk11::SECKEY_PublicKeyStrength(self.key as *const pk11::SECKEYPublicKey) as uint
-        }
-    }
-
-    pub fn from_private(input: &RSAPrivateKey) -> ::NSSResult<RSAPublicKey>
-    {
-        unsafe
-        {
-            let mypub = try_ptr!(pk11::SECKEY_ConvertToPublicKey(input.key));
-            Ok(RSAPublicKey { key: mypub })
         }
     }
 
