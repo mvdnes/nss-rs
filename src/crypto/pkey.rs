@@ -76,7 +76,7 @@ impl RSAPrivateKey
             let slot = try_ptr!(pk11::PK11_GetInternalKeySlot());
             let mut key = ptr::null_mut();
 
-            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot, &mut der, ptr::null_mut(), ptr::null_mut(), false, true, pk11::KU_ALL, &mut key, ptr::null_mut()).to_result());
+            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot, &mut der, ptr::null_mut(), ptr::null_mut(), false, false, pk11::KU_ALL, &mut key, ptr::null_mut()).to_result());
 
             pk11::PK11_FreeSlot(slot);
             Ok(RSAPrivateKey { key: key })
