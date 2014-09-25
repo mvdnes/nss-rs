@@ -4,6 +4,7 @@ use std::{mem, ptr};
 
 #[must_use]
 #[repr(C)]
+#[allow(dead_code)] // List all available options
 pub enum SECStatus
 {
     SECWouldBlock = -2,
@@ -25,7 +26,8 @@ impl SECStatus
 }
 
 #[repr(C)]
-pub enum SECItemType
+#[allow(dead_code)] // We just list all available in NSS
+enum SECItemType
 {
     siBuffer = 0,
     siClearDataBuffer = 1,

@@ -1,22 +1,25 @@
 use libc::c_uint;
 
 #[repr(C)]
+#[allow(dead_code)] // List all available options
 pub enum PRThreadPriority
 {
     PR_PRIORITY_LOW = 0,
-    PR_PRIORITY_NORMAL,
-    PR_PRIORITY_HIGH,
-    PR_PRIORITY_URGENT,
+    PR_PRIORITY_NORMAL = 1,
+    PR_PRIORITY_HIGH = 2,
+    PR_PRIORITY_URGENT = 3,
 }
 
 #[repr(C)]
+#[allow(dead_code)] // List all available options
 pub enum PRThreadType
 {
-    PR_USER_THREAD = 0,
+    PR_USER_THREAD,
     PR_SYSTEM_THREAD,
 }
 
 #[repr(C)]
+#[allow(dead_code)] // List all available options
 pub enum PRStatus
 {
     PR_FAILURE = -1,

@@ -42,6 +42,7 @@ static CKG_MGF1_SHA512 : CK_RSA_PKCS_MGF_TYPE = 0x0000_0004;
 // CK_RSA_PKCS_MGF_TYPE
 
 #[repr(C)]
+#[allow(dead_code)] // List all available options
 pub enum PK11Origin
 {
     OriginNULL = 0,
