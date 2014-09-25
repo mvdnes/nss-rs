@@ -13,3 +13,8 @@ doc = false
 name = "nss5"
 test = false
 doc = false
+
+[[bin]]
+name = "genkey"
+test = false
+doc = false

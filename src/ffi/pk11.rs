@@ -6,6 +6,7 @@ use std::ptr;
 #[allow(non_camel_case_types)]
 pub type CK_MECHANISM_TYPE = c_ulong;
 
+pub static CKM_RSA_PKCS_KEY_PAIR_GEN : CK_MECHANISM_TYPE = 0x0000_0000;
 pub static CKM_RSA_PKCS      : CK_MECHANISM_TYPE = 0x0000_0001;
 pub static CKM_RSA_PKCS_OAEP : CK_MECHANISM_TYPE = 0x0000_0009;
 
@@ -90,6 +91,12 @@ fn mgf_type_from_ckm(ckm: CK_MECHANISM_TYPE) -> CK_RSA_PKCS_MGF_TYPE
     }
 }
 
+pub struct PK11RSAGenParams
+{
+    pub key_size_bits: c_int,
+    pub pe: c_ulong,
+}
+
 // Opaque structures, with pointer references only
 #[repr(C)] pub struct PK11SlotInfo;
 #[repr(C)] pub struct PK11Context;
@@ -133,4 +140,8 @@ extern "C"
     pub fn SECKEY_PublicKeyStrength(key: *const SECKEYPublicKey) -> c_uint;
     pub fn PK11_PrivDecrypt(key: *mut SECKEYPrivateKey, mechanism: CK_MECHANISM_TYPE, param: *mut SECItem,
                             out: *mut u8, out_len: *mut c_uint, max_len: c_uint, enc: *const u8, enc_len: c_uint) -> SECStatus;
+    pub fn PK11_GenerateKeyPair(slot: *mut PK11SlotInfo, kind: CK_MECHANISM_TYPE, param: *mut c_void, pub_key: *mut *mut SECKEYPublicKey,
+                                token: bool, sensitive: bool, wincx: *mut c_void) -> *mut SECKEYPrivateKey;
+    pub fn SECKEY_EncodeDERSubjectPublicKeyInfo(pubk: *const SECKEYPublicKey) -> *mut SECItem;
+    pub fn PK11_ExportDERPrivateKeyInfo(privk: *mut SECKEYPrivateKey, wincx: *mut c_void) -> *mut SECItem;
 }

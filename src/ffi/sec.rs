@@ -85,6 +85,12 @@ impl SECItem
     {
         SECITEM_FreeItem(item, true);
     }
+
+    pub unsafe fn copy_buf(&self) -> Vec<u8>
+    {
+        let buf : &[u8] = mem::transmute(::std::raw::Slice { data: self.data, len: self.len as uint, });
+        buf.to_vec()
+    }
 }
 
 #[link(name="nss3")]

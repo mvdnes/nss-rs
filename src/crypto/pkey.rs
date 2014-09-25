@@ -1,6 +1,6 @@
 use ffi::{pk11, sec};
-use std::ptr;
-use libc::c_uint;
+use std::{ptr, mem};
+use libc::{c_uint, c_int, c_void};
 
 #[allow(non_camel_case_types)]
 pub enum RSAPadding
@@ -69,9 +69,9 @@ impl RSAPrivateKey
 {
     pub fn load(data: &[u8]) -> Result<RSAPrivateKey, String>
     {
+        try!(::nss::init());
         unsafe
         {
-            try!(::nss::init());
             let mut der = sec::SECItem::new(data);
             let slot = try_ptr!(pk11::PK11_GetInternalKeySlot());
             let mut key = ptr::null_mut();
@@ -80,6 +80,35 @@ impl RSAPrivateKey
 
             pk11::PK11_FreeSlot(slot);
             Ok(RSAPrivateKey { key: key })
+        }
+    }
+
+    pub fn gen(key_size_bits: uint) -> Result<RSAPrivateKey, String>
+    {
+        try!(::nss::init());
+        unsafe
+        {
+            let slot = try_ptr!(pk11::PK11_GetInternalKeySlot());
+            let mut param = pk11::PK11RSAGenParams { key_size_bits: key_size_bits as c_int, pe: 65537, };
+            let param_ptr = mem::transmute::<_, *mut c_void>(&mut param);
+            let mut pubkey = ptr::null_mut();
+            let privkey = try_ptr!(pk11::PK11_GenerateKeyPair(slot, pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr, &mut pubkey, false, false, ptr::null_mut()));
+
+            pk11::SECKEY_DestroyPublicKey(pubkey);
+            pk11::PK11_FreeSlot(slot);
+
+            Ok(RSAPrivateKey { key: privkey })
+        }
+    }
+
+    pub fn save(&self) -> Result<Vec<u8>, String>
+    {
+        unsafe
+        {
+            let secitem = try_ptr!(pk11::PK11_ExportDERPrivateKeyInfo(self.key, ptr::null_mut()));
+            let result = (&*secitem).copy_buf();
+            sec::SECItem::free(secitem);
+            Ok(result)
         }
     }
 
@@ -136,15 +165,26 @@ impl RSAPublicKey
 {
     pub fn load(data: &[u8]) -> Result<RSAPublicKey, String>
     {
+        try!(::nss::init());
         unsafe
         {
-            try!(::nss::init());
             let der = sec::SECItem::new(data);
             let spki = try_ptr!(pk11::SECKEY_DecodeDERSubjectPublicKeyInfo(&der));
             let key = try_ptr!(pk11::SECKEY_ExtractPublicKey(spki as *const pk11::CERTSubjectPublicKeyInfo));
 
             pk11::SECKEY_DestroySubjectPublicKeyInfo(spki);
             Ok(RSAPublicKey { key: key })
+        }
+    }
+
+    pub fn save(&self) -> Result<Vec<u8>, String>
+    {
+        unsafe
+        {
+            let secitem = try_ptr!(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key as *const _));
+            let result = (&*secitem).copy_buf();
+            sec::SECItem::free(secitem);
+            Ok(result)
         }
     }
 
