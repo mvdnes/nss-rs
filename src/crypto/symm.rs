@@ -120,8 +120,8 @@ impl Crypter
 
         unsafe
         {
-            let mut key_item = sec::SECItem::new(sec::siBuffer, key);
-            let mut iv_item = sec::SECItem::new(sec::siBuffer, iv);
+            let mut key_item = sec::SECItem::new(key);
+            let mut iv_item = sec::SECItem::new(iv);
 
             let slot = try_ptr!(pk11::PK11_GetBestSlot(self.mech(), ptr::null_mut()));
             let sym_key = try_ptr!(pk11::PK11_ImportSymKey(slot, self.mech(), pk11::OriginUnwrap, mode.to_ffi(), &mut key_item, ptr::null_mut()));

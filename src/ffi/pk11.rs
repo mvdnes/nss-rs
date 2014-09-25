@@ -1,30 +1,44 @@
 use ffi::sec;
 use ffi::sec::{SECStatus, SECItem};
-use libc::{c_void, c_int, c_uint};
+use libc::{c_void, c_int, c_uint, c_ulong};
+use std::ptr;
 
 #[allow(non_camel_case_types)]
-#[repr(u32)]
-pub enum CK_MECHANISM_TYPE
-{
-    CKM_RSA_PKCS      = 0x0000_0001,
-    CKM_RSA_PKCS_OAEP = 0x0000_0009,
-    CKM_DES_ECB     = 0x0000_0121,
-    CKM_DES_CBC     = 0x0000_0122,
-    CKM_DES_CBC_PAD = 0x0000_0125,
-    CKM_AES_ECB     = 0x0000_1081,
-    CKM_AES_CBC     = 0x0000_1082,
-    CKM_AES_CBC_PAD = 0x0000_1085,
-    // TODO: add the others
-}
+pub type CK_MECHANISM_TYPE = c_ulong;
+
+pub static CKM_RSA_PKCS      : CK_MECHANISM_TYPE = 0x0000_0001;
+pub static CKM_RSA_PKCS_OAEP : CK_MECHANISM_TYPE = 0x0000_0009;
+
+pub static CKM_SHA_1   : CK_MECHANISM_TYPE = 0x0000_0220;
+pub static CKM_SHA_224 : CK_MECHANISM_TYPE = 0x0000_0255;
+pub static CKM_SHA_256 : CK_MECHANISM_TYPE = 0x0000_0250;
+pub static CKM_SHA_384 : CK_MECHANISM_TYPE = 0x0000_0260;
+pub static CKM_SHA_512 : CK_MECHANISM_TYPE = 0x0000_0270;
+
+pub static CKM_DES_ECB     : CK_MECHANISM_TYPE = 0x0000_0121;
+pub static CKM_DES_CBC     : CK_MECHANISM_TYPE = 0x0000_0122;
+pub static CKM_DES_CBC_PAD : CK_MECHANISM_TYPE = 0x0000_0125;
+pub static CKM_AES_ECB     : CK_MECHANISM_TYPE = 0x0000_1081;
+pub static CKM_AES_CBC     : CK_MECHANISM_TYPE = 0x0000_1082;
+pub static CKM_AES_CBC_PAD : CK_MECHANISM_TYPE = 0x0000_1085;
+// CK_MECHANISM_TYPE
 
 #[allow(non_camel_case_types)]
-#[repr(u32)]
-pub enum CK_ATTRIBUTE_TYPE
-{
-    CKA_ENCRYPT = 0x0000_0104,
-    CKA_DECRYPT = 0x0000_0105,
-    // TODO: add the others
-}
+pub type CK_ATTRIBUTE_TYPE = c_ulong;
+
+pub static CKA_ENCRYPT : CK_ATTRIBUTE_TYPE = 0x0000_0104;
+pub static CKA_DECRYPT : CK_ATTRIBUTE_TYPE = 0x0000_0105;
+// CK_ATTRIBUTE_TYPE
+
+#[allow(non_camel_case_types)]
+type CK_RSA_PKCS_MGF_TYPE = c_ulong;
+
+static CKG_MGF1_SHA1   : CK_RSA_PKCS_MGF_TYPE = 0x0000_0001;
+static CKG_MGF1_SHA224 : CK_RSA_PKCS_MGF_TYPE = 0x0000_0005;
+static CKG_MGF1_SHA256 : CK_RSA_PKCS_MGF_TYPE = 0x0000_0002;
+static CKG_MGF1_SHA384 : CK_RSA_PKCS_MGF_TYPE = 0x0000_0003;
+static CKG_MGF1_SHA512 : CK_RSA_PKCS_MGF_TYPE = 0x0000_0004;
+// CK_RSA_PKCS_MGF_TYPE
 
 #[repr(C)]
 pub enum PK11Origin
@@ -36,6 +50,46 @@ pub enum PK11Origin
     OriginUnwrap = 4,
 }
 
+#[allow(non_camel_case_types)]
+#[repr(C)]
+pub struct CK_RSA_PKCS_OAEP_PARAMS
+{
+    hash_alg: CK_MECHANISM_TYPE,
+    mgf: CK_RSA_PKCS_MGF_TYPE,
+    source: c_ulong,
+    data_source: *mut c_void,
+    data_len: c_ulong,
+}
+
+impl CK_RSA_PKCS_OAEP_PARAMS
+{
+    pub fn from_algorithm(ckm: CK_MECHANISM_TYPE) -> CK_RSA_PKCS_OAEP_PARAMS
+    {
+        let mgf = mgf_type_from_ckm(ckm);
+        CK_RSA_PKCS_OAEP_PARAMS
+        {
+            hash_alg: ckm,
+            mgf: mgf,
+            source: CKZ_DATA_SPECIFIED,
+            data_source: ptr::null_mut(),
+            data_len: 0,
+        }
+    }
+}
+
+fn mgf_type_from_ckm(ckm: CK_MECHANISM_TYPE) -> CK_RSA_PKCS_MGF_TYPE
+{
+    match ckm
+    {
+        CKM_SHA_1 => CKG_MGF1_SHA1,
+        CKM_SHA_224 => CKG_MGF1_SHA224,
+        CKM_SHA_256 => CKG_MGF1_SHA256,
+        CKM_SHA_384 => CKG_MGF1_SHA384,
+        CKM_SHA_512 => CKG_MGF1_SHA512,
+        _ => fail!("Unsupported mechanism provided"),
+    }
+}
+
 // Opaque structures, with pointer references only
 #[repr(C)] pub struct PK11SlotInfo;
 #[repr(C)] pub struct PK11Context;
@@ -45,6 +99,7 @@ pub enum PK11Origin
 #[repr(C)] pub struct CERTSubjectPublicKeyInfo;
 
 pub static KU_ALL : c_uint = 0xFF;
+pub static CKZ_DATA_SPECIFIED : c_ulong = 0x0000_0001;
 
 #[link(name="nss3")]
 extern "C"

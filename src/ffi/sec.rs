@@ -1,5 +1,6 @@
 use ffi::nspr;
 use libc::{c_uint, c_uchar};
+use std::{mem, ptr};
 
 #[must_use]
 #[repr(C)]
@@ -54,13 +55,29 @@ pub struct SECItem
 
 impl SECItem
 {
-    pub unsafe fn new(typ: SECItemType, buffer: &[u8]) -> SECItem
+    pub unsafe fn new(buffer: &[u8]) -> SECItem
     {
         SECItem
         {
-            typ: typ,
+            typ: siBuffer,
             data: buffer.as_ptr(),
             len: buffer.len() as c_uint,
+        }
+    }
+
+    pub unsafe fn from_struct<T>(data: &T) -> SECItem
+    {
+        let len = mem::size_of::<T>() as c_uint;
+        let ptr = match len
+        {
+            0 => ptr::null(),
+            _ => mem::transmute(data),
+        };
+        SECItem
+        {
+            typ: siBuffer,
+            data: ptr,
+            len: len,
         }
     }
 

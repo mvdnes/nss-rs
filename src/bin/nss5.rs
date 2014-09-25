@@ -13,7 +13,7 @@ fn doit() -> Result<(), String>
     let priv_der = priv_base64.from_base64().unwrap();
 
     let pubkey = try!(pkey::RSAPublicKey::load(pub_der.as_slice()));
-    let enc = try!(pubkey.encrypt(pkey::PKCS1v15, b"Encrypt me!"));
+    let enc = try!(pubkey.encrypt(pkey::OAEP_MGF1_SHA1, b"Encrypt Me!"));
     print!("Encoded:");
     for b in enc.iter()
     {
@@ -22,7 +22,7 @@ fn doit() -> Result<(), String>
     println!("");
 
     let privkey = try!(pkey::RSAPrivateKey::load(priv_der.as_slice()));
-    let dec = try!(privkey.decrypt(pkey::PKCS1v15, enc.as_slice()));
+    let dec = try!(privkey.decrypt(pkey::OAEP_MGF1_SHA1, enc.as_slice()));
     println!("Decoded: {}", String::from_utf8(dec).unwrap());
 
     Ok(())
