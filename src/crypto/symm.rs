@@ -156,7 +156,7 @@ impl Crypter
         Ok(out_buf)
     }
 
-    pub fn final(&mut self) -> ::NSSResult<Vec<u8>>
+    pub fn finalize(&mut self) -> ::NSSResult<Vec<u8>>
     {
         let context = match self.context
         {
