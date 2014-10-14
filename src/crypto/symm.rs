@@ -195,13 +195,13 @@ mod test
         c.init(super::Encrypt, key, b"").unwrap();
 
         let p1 = c.update(plain).unwrap();
-        let p2 = c.final().unwrap();
+        let p2 = c.finalize().unwrap();
         assert_eq!((p1 + p2).as_slice(), result);
 
         c.init(super::Decrypt, key, b"").unwrap();
 
         let r1 = c.update(result).unwrap();
-        let r2 = c.final().unwrap();
+        let r2 = c.finalize().unwrap();
         assert_eq!((r1 + r2).as_slice(), plain);
     }
 
