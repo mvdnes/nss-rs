@@ -1,3 +1,4 @@
+use result::NSSResult;
 use ffi::{pk11, sec};
 use std::{ptr, mem};
 use libc::{c_uint, c_int, c_void};
@@ -67,7 +68,7 @@ pub struct RSAPrivateKey
 
 impl RSAPrivateKey
 {
-    pub fn load(data: &[u8]) -> ::NSSResult<RSAPrivateKey>
+    pub fn load(data: &[u8]) -> NSSResult<RSAPrivateKey>
     {
         try!(::nss::init());
         unsafe
@@ -83,7 +84,7 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn gen(key_size_bits: uint) -> ::NSSResult<RSAPrivateKey>
+    pub fn gen(key_size_bits: uint) -> NSSResult<RSAPrivateKey>
     {
         try!(::nss::init());
         unsafe
@@ -101,7 +102,7 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn save(&self) -> ::NSSResult<Vec<u8>>
+    pub fn save(&self) -> NSSResult<Vec<u8>>
     {
         unsafe
         {
@@ -121,13 +122,13 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> ::NSSResult<Vec<u8>>
+    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
         let public = try!(self.get_public());
         public.encrypt(padding, data)
     }
 
-    pub fn decrypt(&self, padding: RSAPadding, data: &[u8]) -> ::NSSResult<Vec<u8>>
+    pub fn decrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
         unsafe
         {
@@ -144,7 +145,7 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn get_public(&self) -> ::NSSResult<RSAPublicKey>
+    pub fn get_public(&self) -> NSSResult<RSAPublicKey>
     {
         unsafe
         {
@@ -172,7 +173,7 @@ pub struct RSAPublicKey
 
 impl RSAPublicKey
 {
-    pub fn load(data: &[u8]) -> ::NSSResult<RSAPublicKey>
+    pub fn load(data: &[u8]) -> NSSResult<RSAPublicKey>
     {
         try!(::nss::init());
         unsafe
@@ -186,7 +187,7 @@ impl RSAPublicKey
         }
     }
 
-    pub fn save(&self) -> ::NSSResult<Vec<u8>>
+    pub fn save(&self) -> NSSResult<Vec<u8>>
     {
         unsafe
         {
@@ -205,7 +206,7 @@ impl RSAPublicKey
         }
     }
 
-    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> ::NSSResult<Vec<u8>>
+    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
         unsafe
         {

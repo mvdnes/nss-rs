@@ -14,7 +14,7 @@ pub enum SECStatus
 
 impl SECStatus
 {
-    pub fn to_result(&self) -> ::NSSResult<()>
+    pub fn to_result(&self) -> ::result::NSSResult<()>
     {
         match *self
         {
