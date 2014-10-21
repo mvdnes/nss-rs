@@ -74,12 +74,11 @@ impl RSAPrivateKey
         unsafe
         {
             let mut der = sec::SECItem::new(data);
-            let slot = try_ptr!(pk11::PK11_GetInternalKeySlot());
+            let slot = pk11::PK11SlotInfoWrapper::new(try_ptr!(pk11::PK11_GetInternalKeySlot()));
             let mut key = ptr::null_mut();
 
-            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot, &mut der, ptr::null_mut(), ptr::null_mut(), false, false, pk11::KU_ALL, &mut key, ptr::null_mut()).to_result());
+            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.ptr(), &mut der, ptr::null_mut(), ptr::null_mut(), false, false, pk11::KU_ALL, &mut key, ptr::null_mut()).to_result());
 
-            pk11::PK11_FreeSlot(slot);
             Ok(RSAPrivateKey { key: key })
         }
     }
@@ -89,14 +88,13 @@ impl RSAPrivateKey
         try!(::nss::init());
         unsafe
         {
-            let slot = try_ptr!(pk11::PK11_GetInternalKeySlot());
+            let slot = pk11::PK11SlotInfoWrapper::new(try_ptr!(pk11::PK11_GetInternalKeySlot()));
             let mut param = pk11::PK11RSAGenParams { key_size_bits: key_size_bits as c_int, pe: 65537, };
             let param_ptr = mem::transmute::<_, *mut c_void>(&mut param);
             let mut pubkey = ptr::null_mut();
-            let privkey = try_ptr!(pk11::PK11_GenerateKeyPair(slot, pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr, &mut pubkey, false, false, ptr::null_mut()));
+            let privkey = try_ptr!(pk11::PK11_GenerateKeyPair(slot.ptr(), pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr, &mut pubkey, false, false, ptr::null_mut()));
 
             pk11::SECKEY_DestroyPublicKey(pubkey);
-            pk11::PK11_FreeSlot(slot);
 
             Ok(RSAPrivateKey { key: privkey })
         }
