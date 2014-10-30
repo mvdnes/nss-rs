@@ -88,7 +88,7 @@ fn mgf_type_from_ckm(ckm: CK_MECHANISM_TYPE) -> CK_RSA_PKCS_MGF_TYPE
         CKM_SHA_256 => CKG_MGF1_SHA256,
         CKM_SHA_384 => CKG_MGF1_SHA384,
         CKM_SHA_512 => CKG_MGF1_SHA512,
-        _ => fail!("Unsupported mechanism provided"),
+        _ => panic!("Unsupported mechanism provided"),
     }
 }
 
@@ -115,7 +115,7 @@ impl PK11SlotInfoWrapper
 {
 	pub fn new(ptr: *mut PK11SlotInfo) -> PK11SlotInfoWrapper
 	{
-		if ptr.is_null() { fail!(); }
+		if ptr.is_null() { panic!(); }
 		PK11SlotInfoWrapper { ptr: ptr }
 	}
 	pub fn ptr(&self) -> *mut PK11SlotInfo

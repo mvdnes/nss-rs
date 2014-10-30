@@ -20,7 +20,7 @@ impl SECStatus
         {
             SECSuccess => Ok(()),
             SECFailure => Err(nspr::get_error_code()),
-            SECWouldBlock => fail!("Unexpectedly got SECWouldBlock"),
+            SECWouldBlock => panic!("Unexpectedly got SECWouldBlock"),
         }
     }
 }
