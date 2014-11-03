@@ -1,5 +1,6 @@
 use ffi::sec;
 use ffi::sec::{SECStatus, SECItem};
+use result::NSSResult;
 use libc::{c_void, c_int, c_uint, c_ulong};
 use std::ptr;
 
@@ -106,33 +107,50 @@ pub struct PK11RSAGenParams
 #[repr(C)] pub struct SECKEYPublicKey;
 #[repr(C)] pub struct CERTSubjectPublicKeyInfo;
 
-pub struct PK11SlotInfoWrapper
+pub struct SlotInfo
 {
-	ptr: *mut PK11SlotInfo
+    ptr: *mut PK11SlotInfo
 }
 
-impl PK11SlotInfoWrapper
+impl SlotInfo
 {
-	pub fn new(ptr: *mut PK11SlotInfo) -> PK11SlotInfoWrapper
-	{
-		if ptr.is_null() { panic!(); }
-		PK11SlotInfoWrapper { ptr: ptr }
-	}
-	pub fn ptr(&self) -> *mut PK11SlotInfo
-	{
-		self.ptr
-	}
+    pub fn get_internal() -> NSSResult<SlotInfo>
+    {
+        let ptr = unsafe { PK11_GetInternalKeySlot() };
+        SlotInfo::from_ptr(ptr)
+    }
+
+    pub fn get_best(mechanism: CK_MECHANISM_TYPE) -> NSSResult<SlotInfo>
+    {
+        let ptr = unsafe { PK11_GetBestSlot(mechanism, ptr::null_mut()) };
+        SlotInfo::from_ptr(ptr)
+    }
+
+    fn from_ptr(ptr: *mut PK11SlotInfo) -> NSSResult<SlotInfo>
+    {
+        if ptr.is_null() {
+            Err(::ffi::nspr::get_error_code())
+        }
+        else {
+            Ok(SlotInfo { ptr: ptr })
+        }
+    }
+
+    pub fn ptr(&self) -> *mut PK11SlotInfo
+    {
+        self.ptr
+    }
 }
 
-impl Drop for PK11SlotInfoWrapper
+impl Drop for SlotInfo
 {
-	fn drop(&mut self)
-	{
-		unsafe
-		{
-			PK11_FreeSlot(self.ptr);
-		}
-	}
+    fn drop(&mut self)
+    {
+        unsafe
+        {
+            PK11_FreeSlot(self.ptr);
+        }
+    }
 }
 
 pub const KU_ALL : c_uint = 0xFF;
@@ -141,8 +159,8 @@ pub const CKZ_DATA_SPECIFIED : c_ulong = 0x0000_0001;
 #[link(name="nss3")]
 extern "C"
 {
-    pub fn PK11_GetBestSlot(typ: CK_MECHANISM_TYPE, wincx: *mut c_void) -> *mut PK11SlotInfo;
-    pub fn PK11_GetInternalKeySlot() -> *mut PK11SlotInfo;
+    fn PK11_GetBestSlot(typ: CK_MECHANISM_TYPE, wincx: *mut c_void) -> *mut PK11SlotInfo;
+    fn PK11_GetInternalKeySlot() -> *mut PK11SlotInfo;
     fn PK11_FreeSlot(slot: *mut PK11SlotInfo);
     pub fn PK11_ImportSymKey(slot: *mut PK11SlotInfo, cipher: CK_MECHANISM_TYPE, origin: PK11Origin,
                              operation: CK_ATTRIBUTE_TYPE, key: *mut sec::SECItem, wincx: *mut c_void)

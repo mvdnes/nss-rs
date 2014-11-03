@@ -124,7 +124,7 @@ impl Crypter
             let mut key_item = sec::SECItem::new(key);
             let mut iv_item = sec::SECItem::new(iv);
 
-            let slot = pk11::PK11SlotInfoWrapper::new(try_ptr!(pk11::PK11_GetBestSlot(self.mech(), ptr::null_mut())));
+            let slot = try!(pk11::SlotInfo::get_best(self.mech()));
             let sym_key = try_ptr!(pk11::PK11_ImportSymKey(slot.ptr(), self.mech(), pk11::OriginUnwrap, mode.to_ffi(), &mut key_item, ptr::null_mut()));
             let sec_param = try_ptr!(pk11::PK11_ParamFromIV(self.mech(), &mut iv_item));
             let context = try_ptr!(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key, sec_param));
