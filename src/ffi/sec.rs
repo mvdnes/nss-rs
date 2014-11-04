@@ -1,7 +1,9 @@
+use result::NSSResult;
 use ffi::nspr;
 use ffi::nspr::{PRBool, PR_True};
 use libc::{c_uint, c_uchar};
 use std::{mem, ptr};
+use std::kinds::marker::ContravariantLifetime;
 
 #[must_use]
 #[repr(C)]
@@ -56,48 +58,99 @@ pub struct SECItem
     len: c_uint,
 }
 
-impl SECItem
+pub enum SECItemBox<'a>
 {
-    pub unsafe fn new(buffer: &[u8]) -> SECItem
+    SIBox(*mut SECItem),
+    SIData(SECItem, ContravariantLifetime<'a>)
+}
+
+impl SECItemBox<'static>
+{
+    pub fn wrap(data: *mut SECItem) -> NSSResult<SECItemBox<'static>>
     {
-        SECItem
+        match data.is_null()
+        {
+            true => Err(nspr::get_error_code()),
+            false => Ok(SIBox(data)),
+        }
+    }
+
+    pub fn empty() -> SECItemBox<'static>
+    {
+        SIData(SECItem {
+            typ: siBuffer,
+            data: ptr::null(),
+            len: 0,
+        }, ContravariantLifetime)
+    }
+}
+
+impl<'a> SECItemBox<'a>
+{
+    pub fn from_buf(buffer: &'a [u8]) -> SECItemBox<'a>
+    {
+        let si = SECItem
         {
             typ: siBuffer,
             data: buffer.as_ptr(),
             len: buffer.len() as c_uint,
-        }
+        };
+        SIData(si, ContravariantLifetime)
     }
 
-    pub unsafe fn empty() -> SECItem
-    {
-        SECItem { typ: siBuffer, data: ptr::null(), len: 0, }
-    }
-
-    pub unsafe fn from_struct<T>(data: &T) -> SECItem
+    pub fn from_struct<T>(data: &'a T) -> SECItemBox<'a>
     {
         let len = mem::size_of::<T>() as c_uint;
         let ptr = match len
         {
             0 => ptr::null(),
-            _ => mem::transmute(data),
+            _ => unsafe { mem::transmute(data) },
         };
-        SECItem
+        let si = SECItem
         {
             typ: siBuffer,
             data: ptr,
             len: len,
+        };
+        SIData(si, ContravariantLifetime)
+    }
+
+    pub fn get<'b>(&'b self) -> &'b SECItem
+    {
+        match *self
+        {
+            SIBox(ptr) => unsafe { ptr.as_ref().unwrap() },
+            SIData(ref si, _) => si,
         }
     }
 
-    pub unsafe fn free(item: *mut SECItem)
+    pub fn get_mut<'b>(&'b mut self) -> &'b mut SECItem
     {
-        SECITEM_FreeItem(item, PR_True);
+        match *self
+        {
+            SIBox(ptr) => unsafe { ptr.as_mut().unwrap() },
+            SIData(ref mut si, _) => si,
+        }
     }
 
-    pub unsafe fn copy_buf(&self) -> Vec<u8>
+    pub fn copy_buf(&self) -> Vec<u8>
     {
-        let buf : &[u8] = mem::transmute(::std::raw::Slice { data: self.data, len: self.len as uint, });
+        let si = self.get();
+        let buf : &[u8] = unsafe { mem::transmute(::std::raw::Slice { data: si.data, len: si.len as uint, }) };
         buf.to_vec()
+    }
+}
+
+#[unsafe_destructor]
+impl<'a> Drop for SECItemBox<'a>
+{
+    fn drop(&mut self)
+    {
+        match *self
+        {
+            SIBox(ptr) => unsafe { SECITEM_FreeItem(ptr, PR_True) },
+            _ => {},
+        }
     }
 }
 

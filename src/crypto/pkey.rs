@@ -23,12 +23,12 @@ enum RSAPaddingParam
 
 impl RSAPaddingParam
 {
-    unsafe fn to_secitem(&self) -> sec::SECItem
+    fn to_secitem<'a>(&'a self) -> sec::SECItemBox<'a>
     {
         match *self
         {
-            NullParam => sec::SECItem::empty(),
-            OAEPParam(ref param) => sec::SECItem::from_struct(param),
+            NullParam => sec::SECItemBox::empty(),
+            OAEPParam(ref param) => sec::SECItemBox::from_struct(param),
         }
     }
 }
@@ -74,11 +74,11 @@ impl RSAPrivateKey
         try!(::nss::init());
         unsafe
         {
-            let mut der = sec::SECItem::new(data);
+            let mut der = sec::SECItemBox::from_buf(data);
             let slot = try!(pk11::SlotInfo::get_internal());
             let mut key = ptr::null_mut();
 
-            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.ptr(), &mut der, ptr::null_mut(), ptr::null_mut(), PR_False, PR_False, pk11::KU_ALL, &mut key, ptr::null_mut()).to_result());
+            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.ptr(), der.get_mut(), ptr::null_mut(), ptr::null_mut(), PR_False, PR_False, pk11::KU_ALL, &mut key, ptr::null_mut()).to_result());
 
             Ok(RSAPrivateKey { key: key })
         }
@@ -105,9 +105,8 @@ impl RSAPrivateKey
     {
         unsafe
         {
-            let secitem = try_ptr!(pk11::PK11_ExportDERPrivateKeyInfo(self.key, ptr::null_mut()));
-            let result = (&*secitem).copy_buf();
-            sec::SECItem::free(secitem);
+            let secitem = try!(sec::SECItemBox::wrap(pk11::PK11_ExportDERPrivateKeyInfo(self.key, ptr::null_mut())));
+            let result = secitem.copy_buf();
             Ok(result)
         }
     }
@@ -137,7 +136,7 @@ impl RSAPrivateKey
             let params = padding.get_param();
             let mut secitem = params.to_secitem();
 
-            try!(pk11::PK11_PrivDecrypt(self.key, padding.to_ckm(), &mut secitem, out.as_mut_ptr(),
+            try!(pk11::PK11_PrivDecrypt(self.key, padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                         &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint).to_result());
             out.set_len(outlen as uint);
             Ok(out)
@@ -177,8 +176,8 @@ impl RSAPublicKey
         try!(::nss::init());
         unsafe
         {
-            let der = sec::SECItem::new(data);
-            let spki = try_ptr!(pk11::SECKEY_DecodeDERSubjectPublicKeyInfo(&der));
+            let der = sec::SECItemBox::from_buf(data);
+            let spki = try_ptr!(pk11::SECKEY_DecodeDERSubjectPublicKeyInfo(der.get()));
             let key = try_ptr!(pk11::SECKEY_ExtractPublicKey(spki as *const pk11::CERTSubjectPublicKeyInfo));
 
             pk11::SECKEY_DestroySubjectPublicKeyInfo(spki);
@@ -190,9 +189,8 @@ impl RSAPublicKey
     {
         unsafe
         {
-            let secitem = try_ptr!(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key as *const _));
-            let result = (&*secitem).copy_buf();
-            sec::SECItem::free(secitem);
+            let secitem = try!(sec::SECItemBox::wrap(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key as *const _)));
+            let result = secitem.copy_buf();
             Ok(result)
         }
     }
@@ -215,7 +213,7 @@ impl RSAPublicKey
             let params = padding.get_param();
             let mut secitem = params.to_secitem();
 
-            try!(pk11::PK11_PubEncrypt(self.key, padding.to_ckm(), &mut secitem, out.as_mut_ptr(),
+            try!(pk11::PK11_PubEncrypt(self.key, padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                        &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint,
                                        ptr::null_mut()).to_result());
             out.set_len(outlen as uint);

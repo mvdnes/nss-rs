@@ -1,5 +1,6 @@
 #![feature(phase)]
 #![feature(macro_rules)]
+#![feature(unsafe_destructor)]
 
 extern crate sync;
 extern crate libc;
