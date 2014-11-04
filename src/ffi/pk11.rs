@@ -1,6 +1,6 @@
 use ffi::sec;
 use ffi::sec::{SECStatus, SECItem};
-use ffi::nspr::PRBool;
+use ffi::nspr::{PRBool, PR_True};
 use result::NSSResult;
 use libc::{c_void, c_int, c_uint, c_ulong};
 use std::ptr;
@@ -154,35 +154,45 @@ impl Drop for SlotInfo
     }
 }
 
-pub struct SymKey
-{
-    ptr: *mut PK11SymKey
-}
 
-impl SymKey
-{
-    pub fn wrap(ptr: *mut PK11SymKey) -> NSSResult<SymKey>
-    {
-        match ptr.is_null()
+macro_rules! create_wrapper(
+    ($newname:ident, $ffiname:ty, $destructor:ident) => (
+        pub struct $newname
         {
-            true => Err(::ffi::nspr::get_error_code()),
-            false => Ok(SymKey { ptr: ptr }),
+            ptr: *mut $ffiname
         }
-    }
+        impl $newname
+        {
+            pub fn wrap(ptr: *mut $ffiname) -> NSSResult<$newname>
+            {
+                match ptr.is_null()
+                {
+                    true => Err(::ffi::nspr::get_error_code()),
+                    false => Ok($newname { ptr: ptr }),
+                }
+            }
 
-    pub fn get(&self) -> *mut PK11SymKey
-    {
-        self.ptr
-    }
-}
+            pub fn get(&self) -> *mut $ffiname
+            {
+                self.ptr
+            }
+        }
 
-impl Drop for SymKey
-{
-    fn drop(&mut self)
-    {
-        unsafe { PK11_FreeSymKey(self.ptr) }
-    }
-}
+        impl Drop for $newname
+        {
+            fn drop(&mut self)
+            {
+                unsafe { $destructor(self.ptr) }
+            }
+        }
+
+    );
+)
+
+unsafe fn context_destructor(context: *mut PK11Context) { PK11_DestroyContext(context, PR_True); }
+
+create_wrapper!(SymKey, PK11SymKey, PK11_FreeSymKey)
+create_wrapper!(Context, PK11Context, context_destructor)
 
 pub const KU_ALL : c_uint = 0xFF;
 pub const CKZ_DATA_SPECIFIED : c_ulong = 0x0000_0001;
@@ -200,7 +210,7 @@ extern "C"
     pub fn PK11_ParamFromIV(typ: CK_MECHANISM_TYPE, iv: *mut sec::SECItem) -> *mut sec::SECItem;
     pub fn PK11_CreateContextBySymKey(typ: CK_MECHANISM_TYPE, operation: CK_ATTRIBUTE_TYPE,
                                       symKey: *mut PK11SymKey, param: *mut sec::SECItem) -> *mut PK11Context;
-    pub fn PK11_DestroyContext(context: *mut PK11Context, freeit: PRBool);
+    fn PK11_DestroyContext(context: *mut PK11Context, freeit: PRBool);
     pub fn PK11_CipherOp(context: *mut PK11Context, buf_out: *mut u8, outlen: *mut c_int,
                          maxout: c_int, buf_in: *const u8, inlen: c_int) -> SECStatus;
     pub fn PK11_DigestFinal(context: *mut PK11Context, data: *mut u8, outlen: *mut c_uint, length: c_uint) -> SECStatus;

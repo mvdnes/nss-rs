@@ -1,7 +1,6 @@
 use result::NSSResult;
 use ffi::{pk11, sec};
-use ffi::nspr::PR_True;
-use std::{ptr, mem};
+use std::ptr;
 
 pub enum Mode
 {
@@ -72,7 +71,7 @@ pub struct Crypter
 {
     pad: bool,
     typ: Type,
-    context: Option<*mut pk11::PK11Context>,
+    context: Option<pk11::Context>,
 }
 
 impl Crypter
@@ -100,20 +99,8 @@ impl Crypter
         self.typ.to_ffi(self.pad).unwrap()
     }
 
-    fn free_context(&mut self)
-    {
-        let context = mem::replace(&mut self.context, None);
-        match context
-        {
-            None => {},
-            Some(c) => unsafe { pk11::PK11_DestroyContext(c, PR_True); },
-        }
-    }
-
     pub fn init(&mut self, mode: Mode, key: &[u8], iv: &[u8]) -> NSSResult<()>
     {
-        self.free_context();
-
         let needed_key_len = self.typ.key_len();
         if key.len() != needed_key_len
         {
@@ -135,7 +122,7 @@ impl Crypter
                     )
                 );
             let mut sec_param = try!(sec::SECItemBox::wrap(pk11::PK11_ParamFromIV(self.mech(), iv_item.get_mut())));
-            let context = try_ptr!(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get(), sec_param.get_mut()));
+            let context = try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get(), sec_param.get_mut())));
 
             self.context = Some(context);
 
@@ -148,7 +135,7 @@ impl Crypter
         let context = match self.context
         {
             None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
-            Some(c) => c,
+            Some(ref c) => c.get(),
         };
         let mut out_buf = Vec::with_capacity(in_buf.len() + 128);
         unsafe
@@ -166,7 +153,7 @@ impl Crypter
         let context = match self.context
         {
             None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
-            Some(c) => c,
+            Some(ref c) => c.get(),
         };
         let mut out_buf = Vec::with_capacity(2048);
         unsafe
@@ -177,14 +164,6 @@ impl Crypter
             out_buf.set_len(outlen as uint);
         }
         Ok(out_buf)
-    }
-}
-
-impl Drop for Crypter
-{
-    fn drop(&mut self)
-    {
-        self.free_context();
     }
 }
 
