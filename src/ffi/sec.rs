@@ -1,4 +1,5 @@
 use ffi::nspr;
+use ffi::nspr::{PRBool, PR_True};
 use libc::{c_uint, c_uchar};
 use std::{mem, ptr};
 
@@ -85,7 +86,7 @@ impl SECItem
 
     pub unsafe fn free(item: *mut SECItem)
     {
-        SECITEM_FreeItem(item, true);
+        SECITEM_FreeItem(item, PR_True);
     }
 
     pub unsafe fn copy_buf(&self) -> Vec<u8>
@@ -98,5 +99,5 @@ impl SECItem
 #[link(name="nss3")]
 extern "C"
 {
-    fn SECITEM_FreeItem(item: *mut SECItem, freeitem: bool);
+    fn SECITEM_FreeItem(item: *mut SECItem, freeitem: PRBool);
 }

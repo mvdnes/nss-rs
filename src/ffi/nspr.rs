@@ -27,6 +27,13 @@ pub enum PRStatus
     PR_SUCCESS = 0,
 }
 
+#[repr(C)]
+pub enum PRBool
+{
+    PR_True = 1,
+    PR_False = 0,
+}
+
 pub fn get_error_code() -> NSSError
 {
     let code = unsafe { PR_GetError() };

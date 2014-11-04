@@ -1,5 +1,6 @@
 use result::NSSResult;
 use ffi::{pk11, sec};
+use ffi::nspr::PR_True;
 use std::{ptr, mem};
 
 pub enum Mode
@@ -105,7 +106,7 @@ impl Crypter
         match context
         {
             None => {},
-            Some(c) => unsafe { pk11::PK11_DestroyContext(c, true); },
+            Some(c) => unsafe { pk11::PK11_DestroyContext(c, PR_True); },
         }
     }
 
