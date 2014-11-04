@@ -79,7 +79,7 @@ impl RSAPrivateKey
 
         let pkey = unsafe
         {
-            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.ptr(), der.get_mut(), ptr::null_mut(),
+            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.get_mut(), der.get_mut(), ptr::null_mut(),
                                                                 ptr::null_mut(), PR_False, PR_False, pk11::KU_ALL,
                                                                 &mut key, ptr::null_mut()).to_result());
             try!(pk11::PrivateKey::wrap(key))
@@ -100,7 +100,7 @@ impl RSAPrivateKey
         {
             let param_ptr = mem::transmute::<_, *mut c_void>(&mut param);
             try!(pk11::PrivateKey::wrap(
-                    pk11::PK11_GenerateKeyPair(slot.ptr(), pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr,
+                    pk11::PK11_GenerateKeyPair(slot.get_mut(), pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr,
                                                &mut pubkey, PR_False, PR_False, ptr::null_mut())
                     )
                 )

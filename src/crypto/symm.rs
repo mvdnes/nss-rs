@@ -117,7 +117,7 @@ impl Crypter
             let sym_key =
                 try!(
                     pk11::SymKey::wrap(
-                        pk11::PK11_ImportSymKey(slot.ptr(), self.mech(),
+                        pk11::PK11_ImportSymKey(slot.get_mut(), self.mech(),
                                                 pk11::OriginUnwrap, mode.to_ffi(),
                                                 key_item.get_mut(), ptr::null_mut())
                     )
