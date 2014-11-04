@@ -10,6 +10,5 @@ pub use nss::{init, close};
 
 mod ffi;
 mod nss;
-mod util;
 pub mod crypto;
 pub mod result;
