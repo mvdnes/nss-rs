@@ -72,43 +72,52 @@ impl RSAPrivateKey
     pub fn load(data: &[u8]) -> NSSResult<RSAPrivateKey>
     {
         try!(::nss::init());
-        unsafe
+
+        let mut der = sec::SECItemBox::from_buf(data);
+        let slot = try!(pk11::SlotInfo::get_internal());
+        let mut key = ptr::null_mut();
+
+        let pkey = unsafe
         {
-            let mut der = sec::SECItemBox::from_buf(data);
-            let slot = try!(pk11::SlotInfo::get_internal());
-            let mut key = ptr::null_mut();
+            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.ptr(), der.get_mut(), ptr::null_mut(),
+                                                                ptr::null_mut(), PR_False, PR_False, pk11::KU_ALL,
+                                                                &mut key, ptr::null_mut()).to_result());
+            try!(pk11::PrivateKey::wrap(key))
+        };
 
-            try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.ptr(), der.get_mut(), ptr::null_mut(), ptr::null_mut(), PR_False, PR_False, pk11::KU_ALL, &mut key, ptr::null_mut()).to_result());
-            let pkey = try!(pk11::PrivateKey::wrap(key));
-
-            Ok(RSAPrivateKey { key: pkey })
-        }
+        Ok(RSAPrivateKey { key: pkey })
     }
 
     pub fn gen(key_size_bits: uint) -> NSSResult<RSAPrivateKey>
     {
         try!(::nss::init());
-        unsafe
-        {
-            let slot = try!(pk11::SlotInfo::get_internal());
-            let mut param = pk11::PK11RSAGenParams { key_size_bits: key_size_bits as c_int, pe: 65537, };
-            let param_ptr = mem::transmute::<_, *mut c_void>(&mut param);
-            let mut pubkey = ptr::null_mut();
-            let privkey = try!(pk11::PrivateKey::wrap(pk11::PK11_GenerateKeyPair(slot.ptr(), pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr, &mut pubkey, PR_False, PR_False, ptr::null_mut())));
-            let _ = pk11::PublicKey::wrap(pubkey);
 
-            Ok(RSAPrivateKey { key: privkey })
-        }
+        let slot = try!(pk11::SlotInfo::get_internal());
+        let mut param = pk11::PK11RSAGenParams { key_size_bits: key_size_bits as c_int, pe: 65537, };
+        let mut pubkey = ptr::null_mut();
+
+        let privkey = unsafe
+        {
+            let param_ptr = mem::transmute::<_, *mut c_void>(&mut param);
+            try!(pk11::PrivateKey::wrap(
+                    pk11::PK11_GenerateKeyPair(slot.ptr(), pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr,
+                                               &mut pubkey, PR_False, PR_False, ptr::null_mut())
+                    )
+                )
+        };
+
+        let _ = pk11::PublicKey::wrap(pubkey); // This ensures the correct drop of pubkey
+        Ok(RSAPrivateKey { key: privkey })
     }
 
     pub fn save(&self) -> NSSResult<Vec<u8>>
     {
-        unsafe
+        let secitem = unsafe
         {
-            let secitem = try!(sec::SECItemBox::wrap(pk11::PK11_ExportDERPrivateKeyInfo(self.key.get_mut(), ptr::null_mut())));
-            let result = secitem.copy_buf();
-            Ok(result)
-        }
+            try!(sec::SECItemBox::wrap(pk11::PK11_ExportDERPrivateKeyInfo(self.key.get_mut(), ptr::null_mut())))
+        };
+        let result = secitem.copy_buf();
+        Ok(result)
     }
 
     pub fn key_len(&self) -> uint
@@ -128,28 +137,29 @@ impl RSAPrivateKey
 
     pub fn decrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
+        let mut out = Vec::with_capacity(self.key_len());
+        let mut outlen = 0;
+
+        let params = padding.get_param();
+        let mut secitem = params.to_secitem();
+
         unsafe
         {
-            let mut out = Vec::with_capacity(self.key_len());
-            let mut outlen = 0;
-
-            let params = padding.get_param();
-            let mut secitem = params.to_secitem();
-
             try!(pk11::PK11_PrivDecrypt(self.key.get_mut(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                         &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint).to_result());
             out.set_len(outlen as uint);
-            Ok(out)
         }
+
+        Ok(out)
     }
 
     pub fn get_public(&self) -> NSSResult<RSAPublicKey>
     {
-        unsafe
+        let mypub = unsafe
         {
-            let mypub = try!(pk11::PublicKey::wrap(pk11::SECKEY_ConvertToPublicKey(self.key.get_mut())));
-            Ok(RSAPublicKey { key: mypub })
-        }
+            try!(pk11::PublicKey::wrap(pk11::SECKEY_ConvertToPublicKey(self.key.get_mut())))
+        };
+        Ok(RSAPublicKey { key: mypub })
     }
 }
 
@@ -163,24 +173,27 @@ impl RSAPublicKey
     pub fn load(data: &[u8]) -> NSSResult<RSAPublicKey>
     {
         try!(::nss::init());
-        unsafe
-        {
-            let der = sec::SECItemBox::from_buf(data);
-            let spki = try!(pk11::PublicKeyInfo::wrap(pk11::SECKEY_DecodeDERSubjectPublicKeyInfo(der.get())));
-            let key = try!(pk11::PublicKey::wrap(pk11::SECKEY_ExtractPublicKey(spki.get())));
 
-            Ok(RSAPublicKey { key: key })
-        }
+        let der = sec::SECItemBox::from_buf(data);
+
+        let key = unsafe
+        {
+            let spki = try!(pk11::PublicKeyInfo::wrap(pk11::SECKEY_DecodeDERSubjectPublicKeyInfo(der.get())));
+            try!(pk11::PublicKey::wrap(pk11::SECKEY_ExtractPublicKey(spki.get())))
+        };
+
+        Ok(RSAPublicKey { key: key })
     }
 
     pub fn save(&self) -> NSSResult<Vec<u8>>
     {
-        unsafe
+        let secitem = unsafe
         {
-            let secitem = try!(sec::SECItemBox::wrap(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key.get())));
-            let result = secitem.copy_buf();
-            Ok(result)
-        }
+            try!(sec::SECItemBox::wrap(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key.get())))
+        };
+
+        let result = secitem.copy_buf();
+        Ok(result)
     }
 
     pub fn key_len(&self) -> uint
@@ -193,20 +206,22 @@ impl RSAPublicKey
 
     pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
+        let mut out = Vec::with_capacity(self.key_len());
+        let mut outlen = 0;
+
+        let params = padding.get_param();
+        let mut secitem = params.to_secitem();
+
         unsafe
         {
-            let mut out = Vec::with_capacity(self.key_len());
-            let mut outlen = 0;
-
-            let params = padding.get_param();
-            let mut secitem = params.to_secitem();
 
             try!(pk11::PK11_PubEncrypt(self.key.get_mut(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                        &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint,
                                        ptr::null_mut()).to_result());
             out.set_len(outlen as uint);
-            Ok(out)
         }
+
+        Ok(out)
     }
 }
 

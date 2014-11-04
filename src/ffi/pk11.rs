@@ -147,10 +147,7 @@ impl Drop for SlotInfo
 {
     fn drop(&mut self)
     {
-        unsafe
-        {
-            PK11_FreeSlot(self.ptr);
-        }
+        unsafe { PK11_FreeSlot(self.ptr) };
     }
 }
 

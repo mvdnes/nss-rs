@@ -110,9 +110,10 @@ impl Crypter
         let mut key_item = sec::SECItemBox::from_buf(key);
         let mut iv_item = sec::SECItemBox::from_buf(iv);
 
-        unsafe
+        let slot = try!(pk11::SlotInfo::get_best(self.mech()));
+
+        let context = unsafe
         {
-            let slot = try!(pk11::SlotInfo::get_best(self.mech()));
             let sym_key =
                 try!(
                     pk11::SymKey::wrap(
@@ -122,12 +123,11 @@ impl Crypter
                     )
                 );
             let mut sec_param = try!(sec::SECItemBox::wrap(pk11::PK11_ParamFromIV(self.mech(), iv_item.get_mut())));
-            let context = try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get_mut(), sec_param.get_mut())));
+            try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get_mut(), sec_param.get_mut())))
+        };
 
-            self.context = Some(context);
-
-            Ok(())
-        }
+        self.context = Some(context);
+        Ok(())
     }
 
     pub fn update(&mut self, in_buf: &[u8]) -> NSSResult<Vec<u8>>
@@ -137,14 +137,19 @@ impl Crypter
             None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
             Some(ref c) => c.get_mut(),
         };
+
         let mut out_buf = Vec::with_capacity(in_buf.len() + 128);
+        let mut outlen = 0;
+
         unsafe
         {
-            let mut outlen = 0;
-            let status = pk11::PK11_CipherOp(context, out_buf.as_mut_ptr(), &mut outlen, out_buf.capacity() as ::libc::c_int, in_buf.as_ptr(), in_buf.len() as ::libc::c_int);
-            try!(status.to_result());
+            try!(pk11::PK11_CipherOp(context, out_buf.as_mut_ptr(), &mut outlen, out_buf.capacity() as ::libc::c_int,
+                                     in_buf.as_ptr(), in_buf.len() as ::libc::c_int)
+                 .to_result()
+            );
             out_buf.set_len(outlen as uint);
         }
+
         Ok(out_buf)
     }
 
@@ -155,14 +160,19 @@ impl Crypter
             None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
             Some(ref c) => c.get_mut(),
         };
+
         let mut out_buf = Vec::with_capacity(2048);
+        let mut outlen = 0;
+
         unsafe
         {
-            let mut outlen = 0;
-            let status = pk11::PK11_DigestFinal(context, out_buf.as_mut_ptr(), &mut outlen, out_buf.capacity() as ::libc::c_uint);
-            try!(status.to_result());
+            try!(pk11::PK11_DigestFinal(context, out_buf.as_mut_ptr(), &mut outlen,
+                                        out_buf.capacity() as ::libc::c_uint)
+                 .to_result()
+            );
             out_buf.set_len(outlen as uint);
         }
+
         Ok(out_buf)
     }
 }
