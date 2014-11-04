@@ -18,8 +18,7 @@ fn doit() -> nss::result::NSSResult<()>
     println!("Clear Data: {}", String::from_utf8_lossy(message));
 
     try!(crypt.init(symm::Encrypt, key, iv));
-    let mut out = try!(crypt.update(message));
-    out.extend(try!(crypt.finalize()).into_iter());
+    let out = try!(crypt.finalize(message));
 
     print!("Encrypted Data:");
     for b in out.iter()
@@ -29,8 +28,7 @@ fn doit() -> nss::result::NSSResult<()>
     println!("");
 
     try!(crypt.init(symm::Decrypt, key, iv));
-    let mut dec = try!(crypt.update(out.as_slice()));
-    dec.extend(try!(crypt.finalize()).into_iter());
+    let dec = try!(crypt.finalize(out.as_slice()));
 
     println!("Decrypted Data: {}", String::from_utf8_lossy(dec.as_slice()));
 
