@@ -9,7 +9,7 @@ use nss::crypto::symm;
 
 fn doit() -> nss::result::NSSResult<()>
 {
-    let mut crypt = try!(symm::Crypter::new(symm::DES_CBC, true));
+    let mut crypt = try!(symm::Crypter::new(symm::DES_CBC_PAD));
 
     let key : &[u8] = [0xe8, 0xa7, 0x7c, 0xe2, 0x05, 0x63, 0x6a, 0x31];
     let iv : &[u8] = [0xe4, 0xbb, 0x3b, 0xd3, 0xc3, 0x71, 0x2e, 0x58];

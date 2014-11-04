@@ -21,92 +21,58 @@ impl Mode
 }
 
 #[allow(non_camel_case_types)]
-pub enum Type
+pub enum Kind
 {
-    AES_128_ECB,
-    AES_128_CBC,
-    AES_192_ECB,
-    AES_192_CBC,
-    AES_256_ECB,
-    AES_256_CBC,
+    AES_ECB,
+    AES_CBC,
+    AES_CBC_PAD,
     DES_ECB,
     DES_CBC,
+    DES_CBC_PAD,
 }
 
-impl Type
+impl Kind 
 {
-    fn to_ffi(&self, pad: bool) -> Option<pk11::CK_MECHANISM_TYPE>
-    {
-        match (*self, pad)
-        {
-            (AES_128_ECB, false)
-            | (AES_192_ECB, false)
-            | (AES_256_ECB, false) => Some(pk11::CKM_AES_ECB),
-            (AES_128_CBC, false)
-            | (AES_192_CBC, false)
-            | (AES_256_CBC, false) => Some(pk11::CKM_AES_CBC),
-            (AES_128_CBC, true)
-            | (AES_192_CBC, true)
-            | (AES_256_CBC, true) => Some(pk11::CKM_AES_CBC_PAD),
-            (DES_ECB, false) => Some(pk11::CKM_DES_ECB),
-            (DES_CBC, false) => Some(pk11::CKM_DES_CBC),
-            (DES_CBC, true) => Some(pk11::CKM_DES_CBC_PAD),
-            _ => None,
-        }
-    }
-
-    pub fn key_len(&self) -> uint
+    fn to_ffi(&self) -> pk11::CK_MECHANISM_TYPE
     {
         match *self
         {
-            AES_128_ECB | AES_128_CBC => 128 / 8,
-            AES_192_ECB | AES_192_CBC => 192 / 8,
-            AES_256_ECB | AES_256_CBC => 256 / 8,
-            DES_ECB | DES_CBC => 8, // 56 bits, one bit per byte is parity
+            AES_ECB => pk11::CKM_AES_ECB,
+            AES_CBC => pk11::CKM_AES_CBC,
+            AES_CBC_PAD => pk11::CKM_AES_CBC_PAD,
+            DES_ECB => pk11::CKM_DES_ECB,
+            DES_CBC => pk11::CKM_DES_CBC,
+            DES_CBC_PAD => pk11::CKM_DES_CBC_PAD,
         }
     }
 }
 
 pub struct Crypter
 {
-    pad: bool,
-    typ: Type,
+    kind: Kind,
     context: Option<pk11::Context>,
 }
 
 impl Crypter
 {
-    pub fn new(t: Type, pad: bool) -> NSSResult<Crypter>
+    pub fn new(kind: Kind) -> NSSResult<Crypter>
     {
-        match t.to_ffi(pad)
-        {
-            Some(..) => {},
-            None => return Err(::result::SEC_ERROR_INVALID_ALGORITHM),
-        };
-
         try!(::nss::init());
 
         Ok(Crypter
            {
-               pad: pad,
-               typ: t,
+               kind: kind,
                context: None,
            })
     }
 
     fn mech(&self) -> pk11::CK_MECHANISM_TYPE
     {
-        self.typ.to_ffi(self.pad).unwrap()
+        self.kind.to_ffi()
     }
 
     pub fn init(&mut self, mode: Mode, key: &[u8], iv: &[u8]) -> NSSResult<()>
     {
-        let needed_key_len = self.typ.key_len();
-        if key.len() != needed_key_len
-        {
-            return Err(::result::SEC_ERROR_INVALID_KEY);
-        }
-
         let mut key_item = sec::SECItemBox::from_buf(key);
         let mut iv_item = sec::SECItemBox::from_buf(iv);
 
@@ -182,9 +148,9 @@ mod test
 {
     use super::Crypter;
 
-    fn test_fips(typ: super::Type, key: &[u8], plain: &[u8], result: &[u8])
+    fn test_fips(kind: super::Kind, key: &[u8], plain: &[u8], result: &[u8])
     {
-        let mut c = Crypter::new(typ, false).unwrap();
+        let mut c = Crypter::new(kind).unwrap();
 
         c.init(super::Encrypt, key, b"").unwrap();
 
@@ -206,7 +172,7 @@ mod test
         let plain : &[u8] = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
         let result: &[u8] = [0x69, 0xc4, 0xe0, 0xd8, 0x6a, 0x7b, 0x04, 0x30, 0xd8, 0xcd, 0xb7, 0x80, 0x70, 0xb4, 0xc5, 0x5a];
 
-        test_fips(super::AES_128_ECB, key, plain, result);
+        test_fips(super::AES_ECB, key, plain, result);
     }
 
     #[test]
@@ -217,7 +183,7 @@ mod test
         let plain : &[u8] = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
         let result: &[u8] = [0xdd, 0xa9, 0x7c, 0xa4, 0x86, 0x4c, 0xdf, 0xe0, 0x6e, 0xaf, 0x70, 0xa0, 0xec, 0x0d, 0x71, 0x91];
 
-        test_fips(super::AES_192_ECB, key, plain, result);
+        test_fips(super::AES_ECB, key, plain, result);
     }
 
     #[test]
@@ -228,6 +194,6 @@ mod test
         let plain : &[u8] = [0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff];
         let result: &[u8] = [0x8e, 0xa2, 0xb7, 0xca, 0x51, 0x67, 0x45, 0xbf, 0xea, 0xfc, 0x49, 0x90, 0x4b, 0x49, 0x60, 0x89];
 
-        test_fips(super::AES_256_ECB, key, plain, result);
+        test_fips(super::AES_ECB, key, plain, result);
     }
 }
