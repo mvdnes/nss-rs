@@ -154,13 +154,13 @@ impl Drop for SlotInfo
     }
 }
 
-
 macro_rules! create_wrapper(
     ($newname:ident, $ffiname:ty, $destructor:ident) => (
         pub struct $newname
         {
             ptr: *mut $ffiname
         }
+
         impl $newname
         {
             pub fn wrap(ptr: *mut $ffiname) -> NSSResult<$newname>
@@ -172,7 +172,14 @@ macro_rules! create_wrapper(
                 }
             }
 
-            pub fn get(&self) -> *mut $ffiname
+            #[allow(dead_code)]
+            pub fn get(&self) -> *const $ffiname
+            {
+                self.ptr as *const $ffiname
+            }
+
+            #[allow(dead_code)]
+            pub fn get_mut(&self) -> *mut $ffiname
             {
                 self.ptr
             }

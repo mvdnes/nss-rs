@@ -105,7 +105,7 @@ impl RSAPrivateKey
     {
         unsafe
         {
-            let secitem = try!(sec::SECItemBox::wrap(pk11::PK11_ExportDERPrivateKeyInfo(self.key.get(), ptr::null_mut())));
+            let secitem = try!(sec::SECItemBox::wrap(pk11::PK11_ExportDERPrivateKeyInfo(self.key.get_mut(), ptr::null_mut())));
             let result = secitem.copy_buf();
             Ok(result)
         }
@@ -136,7 +136,7 @@ impl RSAPrivateKey
             let params = padding.get_param();
             let mut secitem = params.to_secitem();
 
-            try!(pk11::PK11_PrivDecrypt(self.key.get(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
+            try!(pk11::PK11_PrivDecrypt(self.key.get_mut(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                         &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint).to_result());
             out.set_len(outlen as uint);
             Ok(out)
@@ -147,7 +147,7 @@ impl RSAPrivateKey
     {
         unsafe
         {
-            let mypub = try!(pk11::PublicKey::wrap(pk11::SECKEY_ConvertToPublicKey(self.key.get())));
+            let mypub = try!(pk11::PublicKey::wrap(pk11::SECKEY_ConvertToPublicKey(self.key.get_mut())));
             Ok(RSAPublicKey { key: mypub })
         }
     }
@@ -167,7 +167,7 @@ impl RSAPublicKey
         {
             let der = sec::SECItemBox::from_buf(data);
             let spki = try!(pk11::PublicKeyInfo::wrap(pk11::SECKEY_DecodeDERSubjectPublicKeyInfo(der.get())));
-            let key = try!(pk11::PublicKey::wrap(pk11::SECKEY_ExtractPublicKey(spki.get() as *const pk11::CERTSubjectPublicKeyInfo)));
+            let key = try!(pk11::PublicKey::wrap(pk11::SECKEY_ExtractPublicKey(spki.get())));
 
             Ok(RSAPublicKey { key: key })
         }
@@ -177,7 +177,7 @@ impl RSAPublicKey
     {
         unsafe
         {
-            let secitem = try!(sec::SECItemBox::wrap(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key.get() as *const _)));
+            let secitem = try!(sec::SECItemBox::wrap(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key.get())));
             let result = secitem.copy_buf();
             Ok(result)
         }
@@ -187,7 +187,7 @@ impl RSAPublicKey
     {
         unsafe
         {
-            pk11::SECKEY_PublicKeyStrength(self.key.get() as *const pk11::SECKEYPublicKey) as uint
+            pk11::SECKEY_PublicKeyStrength(self.key.get()) as uint
         }
     }
 
@@ -201,7 +201,7 @@ impl RSAPublicKey
             let params = padding.get_param();
             let mut secitem = params.to_secitem();
 
-            try!(pk11::PK11_PubEncrypt(self.key.get(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
+            try!(pk11::PK11_PubEncrypt(self.key.get_mut(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                        &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint,
                                        ptr::null_mut()).to_result());
             out.set_len(outlen as uint);

@@ -122,7 +122,7 @@ impl Crypter
                     )
                 );
             let mut sec_param = try!(sec::SECItemBox::wrap(pk11::PK11_ParamFromIV(self.mech(), iv_item.get_mut())));
-            let context = try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get(), sec_param.get_mut())));
+            let context = try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get_mut(), sec_param.get_mut())));
 
             self.context = Some(context);
 
@@ -135,7 +135,7 @@ impl Crypter
         let context = match self.context
         {
             None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
-            Some(ref c) => c.get(),
+            Some(ref c) => c.get_mut(),
         };
         let mut out_buf = Vec::with_capacity(in_buf.len() + 128);
         unsafe
@@ -153,7 +153,7 @@ impl Crypter
         let context = match self.context
         {
             None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
-            Some(ref c) => c.get(),
+            Some(ref c) => c.get_mut(),
         };
         let mut out_buf = Vec::with_capacity(2048);
         unsafe
