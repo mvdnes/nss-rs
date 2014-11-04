@@ -25,6 +25,7 @@ fn main()
 
     println!("pub : {}", pub_file.write(pub_der.as_slice()));
     println!("priv: {}", priv_file.write(priv_der.as_slice()));
+    let _ = nss::close();
 }
 
 fn print_usage(name: &str)

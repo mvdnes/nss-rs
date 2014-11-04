@@ -193,6 +193,9 @@ unsafe fn context_destructor(context: *mut PK11Context) { PK11_DestroyContext(co
 
 create_wrapper!(SymKey, PK11SymKey, PK11_FreeSymKey)
 create_wrapper!(Context, PK11Context, context_destructor)
+create_wrapper!(PrivateKey, SECKEYPrivateKey, SECKEY_DestroyPrivateKey)
+create_wrapper!(PublicKey, SECKEYPublicKey, SECKEY_DestroyPublicKey)
+create_wrapper!(PublicKeyInfo, CERTSubjectPublicKeyInfo, SECKEY_DestroySubjectPublicKeyInfo)
 
 pub const KU_ALL : c_uint = 0xFF;
 pub const CKZ_DATA_SPECIFIED : c_ulong = 0x0000_0001;
@@ -216,10 +219,10 @@ extern "C"
     pub fn PK11_DigestFinal(context: *mut PK11Context, data: *mut u8, outlen: *mut c_uint, length: c_uint) -> SECStatus;
 
     pub fn SECKEY_ConvertToPublicKey(private_key: *mut SECKEYPrivateKey) -> *mut SECKEYPublicKey;
-    pub fn SECKEY_DestroyPrivateKey(private_key: *mut SECKEYPrivateKey);
-    pub fn SECKEY_DestroyPublicKey(private_key: *mut SECKEYPublicKey);
+    fn SECKEY_DestroyPrivateKey(private_key: *mut SECKEYPrivateKey);
+    fn SECKEY_DestroyPublicKey(private_key: *mut SECKEYPublicKey);
     pub fn SECKEY_DecodeDERSubjectPublicKeyInfo(spkider: *const SECItem) -> *mut CERTSubjectPublicKeyInfo;
-    pub fn SECKEY_DestroySubjectPublicKeyInfo(cert: *mut CERTSubjectPublicKeyInfo);
+    fn SECKEY_DestroySubjectPublicKeyInfo(cert: *mut CERTSubjectPublicKeyInfo);
     pub fn SECKEY_ExtractPublicKey(cert_subject: *const CERTSubjectPublicKeyInfo) -> *mut SECKEYPublicKey;
     pub fn PK11_ImportDERPrivateKeyInfoAndReturnKey(slot: *mut PK11SlotInfo, derPKI: *mut SECItem, nickname: *mut SECItem,
                                                     publicValue: *mut SECItem, isPerm: PRBool, isPrivate: PRBool, usage: c_uint,
