@@ -49,67 +49,48 @@ impl Kind
 
 pub struct Crypter
 {
-    kind: Kind,
-    context: Option<pk11::Context>,
+    context: pk11::Context,
 }
 
 impl Crypter
 {
-    pub fn new(kind: Kind) -> NSSResult<Crypter>
+    pub fn new(kind: Kind, mode: Mode, key: &[u8], iv: &[u8]) -> NSSResult<Crypter>
     {
         try!(::nss::init());
 
-        Ok(Crypter
-           {
-               kind: kind,
-               context: None,
-           })
-    }
-
-    fn mech(&self) -> pk11::CK_MECHANISM_TYPE
-    {
-        self.kind.to_ffi()
-    }
-
-    pub fn init(&mut self, mode: Mode, key: &[u8], iv: &[u8]) -> NSSResult<()>
-    {
+        let mech = kind.to_ffi();
         let mut key_item = sec::SECItemBox::from_buf(key);
         let mut iv_item = sec::SECItemBox::from_buf(iv);
 
-        let slot = try!(pk11::SlotInfo::get_best(self.mech()));
+        let slot = try!(pk11::SlotInfo::get_best(mech));
 
         let context = unsafe
         {
             let sym_key =
                 try!(
                     pk11::SymKey::wrap(
-                        pk11::PK11_ImportSymKey(slot.get_mut(), self.mech(),
+                        pk11::PK11_ImportSymKey(slot.get_mut(), mech,
                                                 pk11::OriginUnwrap, mode.to_ffi(),
                                                 key_item.get_mut(), ptr::null_mut())
                     )
                 );
-            let mut sec_param = try!(sec::SECItemBox::wrap(pk11::PK11_ParamFromIV(self.mech(), iv_item.get_mut())));
-            try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get_mut(), sec_param.get_mut())))
+            let mut sec_param = try!(sec::SECItemBox::wrap(pk11::PK11_ParamFromIV(mech, iv_item.get_mut())));
+            try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(mech, mode.to_ffi(), sym_key.get_mut(), sec_param.get_mut())))
         };
 
-        self.context = Some(context);
-        Ok(())
+        Ok(Crypter {
+            context: context
+        })
     }
 
     pub fn update(&mut self, in_buf: &[u8]) -> NSSResult<Vec<u8>>
     {
-        let context = match self.context
-        {
-            None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
-            Some(ref c) => c.get_mut(),
-        };
-
         let mut out_buf = Vec::with_capacity(in_buf.len() + 128);
         let mut outlen = 0;
 
         unsafe
         {
-            try!(pk11::PK11_CipherOp(context, out_buf.as_mut_ptr(), &mut outlen, out_buf.capacity() as ::libc::c_int,
+            try!(pk11::PK11_CipherOp(self.context.get_mut(), out_buf.as_mut_ptr(), &mut outlen, out_buf.capacity() as ::libc::c_int,
                                      in_buf.as_ptr(), in_buf.len() as ::libc::c_int)
                  .to_result()
             );
@@ -121,12 +102,6 @@ impl Crypter
 
     pub fn finalize(&mut self, in_buf: &[u8]) -> NSSResult<Vec<u8>>
     {
-        let context = match self.context
-        {
-            None => return Err(::result::SEC_ERROR_NOT_INITIALIZED),
-            Some(ref c) => c.get_mut(),
-        };
-
         let mut result = Vec::new();
         if in_buf.len() != 0 {
             result = try!(self.update(in_buf));
@@ -137,7 +112,7 @@ impl Crypter
 
         unsafe
         {
-            try!(pk11::PK11_DigestFinal(context, out_buf.as_mut_ptr(), &mut outlen,
+            try!(pk11::PK11_DigestFinal(self.context.get_mut(), out_buf.as_mut_ptr(), &mut outlen,
                                         out_buf.capacity() as ::libc::c_uint)
                  .to_result()
             );
@@ -156,14 +131,12 @@ mod test
 
     fn test_fips(key: &[u8], plain: &[u8], result: &[u8])
     {
-        let mut c = Crypter::new(super::AES_ECB).unwrap();
-
-        c.init(super::Encrypt, key, b"").unwrap();
+        let mut c = Crypter::new(super::AES_ECB, super::Encrypt, key, b"").unwrap();
 
         let p = c.finalize(plain).unwrap();
         assert_eq!(p.as_slice(), result);
 
-        c.init(super::Decrypt, key, b"").unwrap();
+        let mut c = Crypter::new(super::AES_ECB, super::Decrypt, key, b"").unwrap();
 
         let r = c.finalize(result).unwrap();
         assert_eq!(r.as_slice(), plain);
