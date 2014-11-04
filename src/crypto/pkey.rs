@@ -27,7 +27,7 @@ impl RSAPaddingParam
     {
         match *self
         {
-            NullParam => sec::SECItem::from_struct(&()),
+            NullParam => sec::SECItem::empty(),
             OAEPParam(ref param) => sec::SECItem::from_struct(param),
         }
     }

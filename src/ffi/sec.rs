@@ -68,6 +68,11 @@ impl SECItem
         }
     }
 
+    pub unsafe fn empty() -> SECItem
+    {
+        SECItem { typ: siBuffer, data: ptr::null(), len: 0, }
+    }
+
     pub unsafe fn from_struct<T>(data: &T) -> SECItem
     {
         let len = mem::size_of::<T>() as c_uint;
