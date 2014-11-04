@@ -154,6 +154,36 @@ impl Drop for SlotInfo
     }
 }
 
+pub struct SymKey
+{
+    ptr: *mut PK11SymKey
+}
+
+impl SymKey
+{
+    pub fn wrap(ptr: *mut PK11SymKey) -> NSSResult<SymKey>
+    {
+        match ptr.is_null()
+        {
+            true => Err(::ffi::nspr::get_error_code()),
+            false => Ok(SymKey { ptr: ptr }),
+        }
+    }
+
+    pub fn get(&self) -> *mut PK11SymKey
+    {
+        self.ptr
+    }
+}
+
+impl Drop for SymKey
+{
+    fn drop(&mut self)
+    {
+        unsafe { PK11_FreeSymKey(self.ptr) }
+    }
+}
+
 pub const KU_ALL : c_uint = 0xFF;
 pub const CKZ_DATA_SPECIFIED : c_ulong = 0x0000_0001;
 
@@ -166,7 +196,7 @@ extern "C"
     pub fn PK11_ImportSymKey(slot: *mut PK11SlotInfo, cipher: CK_MECHANISM_TYPE, origin: PK11Origin,
                              operation: CK_ATTRIBUTE_TYPE, key: *mut sec::SECItem, wincx: *mut c_void)
         -> *mut PK11SymKey;
-    pub fn PK11_FreeSymKey(key: *mut PK11SymKey);
+    fn PK11_FreeSymKey(key: *mut PK11SymKey);
     pub fn PK11_ParamFromIV(typ: CK_MECHANISM_TYPE, iv: *mut sec::SECItem) -> *mut sec::SECItem;
     pub fn PK11_CreateContextBySymKey(typ: CK_MECHANISM_TYPE, operation: CK_ATTRIBUTE_TYPE,
                                       symKey: *mut PK11SymKey, param: *mut sec::SECItem) -> *mut PK11Context;

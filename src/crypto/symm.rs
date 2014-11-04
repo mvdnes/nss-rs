@@ -126,13 +126,18 @@ impl Crypter
         unsafe
         {
             let slot = try!(pk11::SlotInfo::get_best(self.mech()));
-            let sym_key = try_ptr!(pk11::PK11_ImportSymKey(slot.ptr(), self.mech(), pk11::OriginUnwrap, mode.to_ffi(), key_item.get_mut(), ptr::null_mut()));
+            let sym_key =
+                try!(
+                    pk11::SymKey::wrap(
+                        pk11::PK11_ImportSymKey(slot.ptr(), self.mech(),
+                                                pk11::OriginUnwrap, mode.to_ffi(),
+                                                key_item.get_mut(), ptr::null_mut())
+                    )
+                );
             let mut sec_param = try!(sec::SECItemBox::wrap(pk11::PK11_ParamFromIV(self.mech(), iv_item.get_mut())));
-            let context = try_ptr!(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key, sec_param.get_mut()));
+            let context = try_ptr!(pk11::PK11_CreateContextBySymKey(self.mech(), mode.to_ffi(), sym_key.get(), sec_param.get_mut()));
 
             self.context = Some(context);
-
-            pk11::PK11_FreeSymKey(sym_key);
 
             Ok(())
         }
