@@ -1,6 +1,6 @@
 use result::NSSResult;
 use ffi::nspr;
-use ffi::nspr::{PRBool, PR_True};
+use ffi::nspr::PRBool;
 use libc::{c_uint, c_uchar};
 use std::{mem, ptr};
 use std::kinds::marker::ContravariantLifetime;
@@ -10,9 +10,9 @@ use std::kinds::marker::ContravariantLifetime;
 #[allow(dead_code)] // List all available options
 pub enum SECStatus
 {
-    SECWouldBlock = -2,
-    SECFailure = -1,
-    SECSuccess = 0
+    WouldBlock = -2,
+    Failure = -1,
+    Success = 0
 }
 
 impl SECStatus
@@ -21,9 +21,9 @@ impl SECStatus
     {
         match *self
         {
-            SECSuccess => Ok(()),
-            SECFailure => Err(nspr::get_error_code()),
-            SECWouldBlock => panic!("Unexpectedly got SECWouldBlock"),
+            SECStatus::Success => Ok(()),
+            SECStatus::Failure => Err(nspr::get_error_code()),
+            SECStatus::WouldBlock => panic!("Unexpectedly got SECWouldBlock"),
         }
     }
 }
@@ -32,73 +32,73 @@ impl SECStatus
 #[allow(dead_code)] // We just list all available in NSS
 enum SECItemType
 {
-    siBuffer = 0,
-    siClearDataBuffer = 1,
-    siCipherDataBuffer = 2,
-    siDERCertBuffer = 3,
-    siEncodedCertBuffer = 4,
-    siDERNameBuffer = 5,
-    siEncodedNameBuffer = 6,
-    siAsciiNameString = 7,
-    siAsciiString = 8,
-    siDEROID = 9,
-    siUnsignedInteger = 10,
-    siUTCTime = 11,
-    siGeneralizedTime = 12,
-    siVisibleString = 13,
-    siUTF8String = 14,
-    siBMPString = 15,
+    Buffer = 0,
+    ClearDataBuffer = 1,
+    CipherDataBuffer = 2,
+    DERCertBuffer = 3,
+    EncodedCertBuffer = 4,
+    DERNameBuffer = 5,
+    EncodedNameBuffer = 6,
+    AsciiNameString = 7,
+    AsciiString = 8,
+    DEROID = 9,
+    UnsignedInteger = 10,
+    UTCTime = 11,
+    GeneralizedTime = 12,
+    VisibleString = 13,
+    UTF8String = 14,
+    BMPString = 15,
 }
 
 #[repr(C)]
-pub struct SECItem
+pub struct SECItemFFI
 {
     typ: SECItemType,
     data: *const c_uchar,
     len: c_uint,
 }
 
-pub enum SECItemBox<'a>
+pub enum SECItem<'a>
 {
-    SIBox(*mut SECItem),
-    SIData(SECItem, ContravariantLifetime<'a>)
+    Boxed(*mut SECItemFFI),
+    Data(SECItemFFI, ContravariantLifetime<'a>)
 }
 
-impl SECItemBox<'static>
+impl SECItem<'static>
 {
-    pub fn wrap(data: *mut SECItem) -> NSSResult<SECItemBox<'static>>
+    pub fn wrap(data: *mut SECItemFFI) -> NSSResult<SECItem<'static>>
     {
         match data.is_null()
         {
             true => Err(nspr::get_error_code()),
-            false => Ok(SIBox(data)),
+            false => Ok(SECItem::Boxed(data)),
         }
     }
 
-    pub fn empty() -> SECItemBox<'static>
+    pub fn empty() -> SECItem<'static>
     {
-        SIData(SECItem {
-            typ: siBuffer,
+        SECItem::Data(SECItemFFI {
+            typ: SECItemType::Buffer,
             data: ptr::null(),
             len: 0,
         }, ContravariantLifetime)
     }
 }
 
-impl<'a> SECItemBox<'a>
+impl<'a> SECItem<'a>
 {
-    pub fn from_buf(buffer: &'a [u8]) -> SECItemBox<'a>
+    pub fn from_buf(buffer: &'a [u8]) -> SECItem<'a>
     {
-        let si = SECItem
+        let si = SECItemFFI
         {
-            typ: siBuffer,
+            typ: SECItemType::Buffer,
             data: buffer.as_ptr(),
             len: buffer.len() as c_uint,
         };
-        SIData(si, ContravariantLifetime)
+        SECItem::Data(si, ContravariantLifetime)
     }
 
-    pub fn from_struct<T>(data: &'a T) -> SECItemBox<'a>
+    pub fn from_struct<T>(data: &'a T) -> SECItem<'a>
     {
         let len = mem::size_of::<T>() as c_uint;
         let ptr = match len
@@ -106,30 +106,30 @@ impl<'a> SECItemBox<'a>
             0 => ptr::null(),
             _ => unsafe { mem::transmute(data) },
         };
-        let si = SECItem
+        let si = SECItemFFI
         {
-            typ: siBuffer,
+            typ: SECItemType::Buffer,
             data: ptr,
             len: len,
         };
-        SIData(si, ContravariantLifetime)
+        SECItem::Data(si, ContravariantLifetime)
     }
 
-    pub fn get<'b>(&'b self) -> &'b SECItem
+    pub fn get<'b>(&'b self) -> &'b SECItemFFI
     {
         match *self
         {
-            SIBox(ptr) => unsafe { ptr.as_ref().unwrap() },
-            SIData(ref si, _) => si,
+            SECItem::Boxed(ptr) => unsafe { ptr.as_ref().unwrap() },
+            SECItem::Data(ref si, _) => si,
         }
     }
 
-    pub fn get_mut<'b>(&'b mut self) -> &'b mut SECItem
+    pub fn get_mut<'b>(&'b mut self) -> &'b mut SECItemFFI
     {
         match *self
         {
-            SIBox(ptr) => unsafe { ptr.as_mut().unwrap() },
-            SIData(ref mut si, _) => si,
+            SECItem::Boxed(ptr) => unsafe { ptr.as_mut().unwrap() },
+            SECItem::Data(ref mut si, _) => si,
         }
     }
 
@@ -142,13 +142,13 @@ impl<'a> SECItemBox<'a>
 }
 
 #[unsafe_destructor]
-impl<'a> Drop for SECItemBox<'a>
+impl<'a> Drop for SECItem<'a>
 {
     fn drop(&mut self)
     {
         match *self
         {
-            SIBox(ptr) => unsafe { SECITEM_FreeItem(ptr, PR_True) },
+            SECItem::Boxed(ptr) => unsafe { SECITEM_FreeItem(ptr, PRBool::True) },
             _ => {},
         }
     }
@@ -157,5 +157,5 @@ impl<'a> Drop for SECItemBox<'a>
 #[link(name="nss3")]
 extern "C"
 {
-    fn SECITEM_FreeItem(item: *mut SECItem, freeitem: PRBool);
+    fn SECITEM_FreeItem(item: *mut SECItemFFI, freeitem: PRBool);
 }

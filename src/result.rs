@@ -14,7 +14,7 @@ impl fmt::Show for NSSError
     {
         match *self
         {
-            NSS(code) => {
+            NSSError::NSS(code) => {
                 match ::ffi::nspr::get_error_message(code)
                 {
                     Some(message) => formatter.write(message.as_bytes()),

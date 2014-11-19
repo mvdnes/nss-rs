@@ -14,8 +14,8 @@ impl Mode
     {
         match *self
         {
-            Encrypt => pk11::CKA_ENCRYPT,
-            Decrypt => pk11::CKA_DECRYPT,
+            Mode::Encrypt => pk11::CKA_ENCRYPT,
+            Mode::Decrypt => pk11::CKA_DECRYPT,
         }
     }
 }
@@ -37,12 +37,12 @@ impl Kind
     {
         match *self
         {
-            AES_ECB => pk11::CKM_AES_ECB,
-            AES_CBC => pk11::CKM_AES_CBC,
-            AES_CBC_PAD => pk11::CKM_AES_CBC_PAD,
-            DES_ECB => pk11::CKM_DES_ECB,
-            DES_CBC => pk11::CKM_DES_CBC,
-            DES_CBC_PAD => pk11::CKM_DES_CBC_PAD,
+            Kind::AES_ECB => pk11::CKM_AES_ECB,
+            Kind::AES_CBC => pk11::CKM_AES_CBC,
+            Kind::AES_CBC_PAD => pk11::CKM_AES_CBC_PAD,
+            Kind::DES_ECB => pk11::CKM_DES_ECB,
+            Kind::DES_CBC => pk11::CKM_DES_CBC,
+            Kind::DES_CBC_PAD => pk11::CKM_DES_CBC_PAD,
         }
     }
 }
@@ -59,8 +59,8 @@ impl Crypter
         try!(::nss::init());
 
         let mech = kind.to_ffi();
-        let mut key_item = sec::SECItemBox::from_buf(key);
-        let mut iv_item = sec::SECItemBox::from_buf(iv);
+        let mut key_item = sec::SECItem::from_buf(key);
+        let mut iv_item = sec::SECItem::from_buf(iv);
 
         let slot = try!(pk11::SlotInfo::get_best(mech));
 
@@ -70,11 +70,11 @@ impl Crypter
                 try!(
                     pk11::SymKey::wrap(
                         pk11::PK11_ImportSymKey(slot.get_mut(), mech,
-                                                pk11::OriginUnwrap, mode.to_ffi(),
+                                                pk11::PK11Origin::OriginUnwrap, mode.to_ffi(),
                                                 key_item.get_mut(), ptr::null_mut())
                     )
                 );
-            let mut sec_param = try!(sec::SECItemBox::wrap(pk11::PK11_ParamFromIV(mech, iv_item.get_mut())));
+            let mut sec_param = try!(sec::SECItem::wrap(pk11::PK11_ParamFromIV(mech, iv_item.get_mut())));
             try!(pk11::Context::wrap(pk11::PK11_CreateContextBySymKey(mech, mode.to_ffi(), sym_key.get_mut(), sec_param.get_mut())))
         };
 
@@ -131,12 +131,12 @@ mod test
 
     fn test_fips(key: &[u8], plain: &[u8], result: &[u8])
     {
-        let mut c = Crypter::new(super::AES_ECB, super::Encrypt, key, b"").unwrap();
+        let mut c = Crypter::new(super::Kind::AES_ECB, super::Mode::Encrypt, key, b"").unwrap();
 
         let p = c.finalize(plain).unwrap();
         assert_eq!(p.as_slice(), result);
 
-        let mut c = Crypter::new(super::AES_ECB, super::Decrypt, key, b"").unwrap();
+        let mut c = Crypter::new(super::Kind::AES_ECB, super::Mode::Decrypt, key, b"").unwrap();
 
         let r = c.finalize(result).unwrap();
         assert_eq!(r.as_slice(), plain);

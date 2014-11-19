@@ -1,6 +1,6 @@
 use ffi::sec;
-use ffi::sec::{SECStatus, SECItem};
-use ffi::nspr::{PRBool, PR_True};
+use ffi::sec::{SECStatus, SECItemFFI};
+use ffi::nspr::PRBool;
 use result::NSSResult;
 use libc::{c_void, c_int, c_uint, c_ulong};
 use std::ptr;
@@ -193,7 +193,7 @@ macro_rules! create_wrapper(
     );
 )
 
-unsafe fn context_destructor(context: *mut PK11Context) { PK11_DestroyContext(context, PR_True); }
+unsafe fn context_destructor(context: *mut PK11Context) { PK11_DestroyContext(context, PRBool::True); }
 
 create_wrapper!(SymKey, PK11SymKey, PK11_FreeSymKey)
 create_wrapper!(Context, PK11Context, context_destructor)
@@ -211,12 +211,12 @@ extern "C"
     fn PK11_GetInternalKeySlot() -> *mut PK11SlotInfo;
     fn PK11_FreeSlot(slot: *mut PK11SlotInfo);
     pub fn PK11_ImportSymKey(slot: *mut PK11SlotInfo, cipher: CK_MECHANISM_TYPE, origin: PK11Origin,
-                             operation: CK_ATTRIBUTE_TYPE, key: *mut sec::SECItem, wincx: *mut c_void)
+                             operation: CK_ATTRIBUTE_TYPE, key: *mut sec::SECItemFFI, wincx: *mut c_void)
         -> *mut PK11SymKey;
     fn PK11_FreeSymKey(key: *mut PK11SymKey);
-    pub fn PK11_ParamFromIV(typ: CK_MECHANISM_TYPE, iv: *mut sec::SECItem) -> *mut sec::SECItem;
+    pub fn PK11_ParamFromIV(typ: CK_MECHANISM_TYPE, iv: *mut sec::SECItemFFI) -> *mut sec::SECItemFFI;
     pub fn PK11_CreateContextBySymKey(typ: CK_MECHANISM_TYPE, operation: CK_ATTRIBUTE_TYPE,
-                                      symKey: *mut PK11SymKey, param: *mut sec::SECItem) -> *mut PK11Context;
+                                      symKey: *mut PK11SymKey, param: *mut sec::SECItemFFI) -> *mut PK11Context;
     fn PK11_DestroyContext(context: *mut PK11Context, freeit: PRBool);
     pub fn PK11_CipherOp(context: *mut PK11Context, buf_out: *mut u8, outlen: *mut c_int,
                          maxout: c_int, buf_in: *const u8, inlen: c_int) -> SECStatus;
@@ -225,19 +225,19 @@ extern "C"
     pub fn SECKEY_ConvertToPublicKey(private_key: *mut SECKEYPrivateKey) -> *mut SECKEYPublicKey;
     fn SECKEY_DestroyPrivateKey(private_key: *mut SECKEYPrivateKey);
     fn SECKEY_DestroyPublicKey(private_key: *mut SECKEYPublicKey);
-    pub fn SECKEY_DecodeDERSubjectPublicKeyInfo(spkider: *const SECItem) -> *mut CERTSubjectPublicKeyInfo;
+    pub fn SECKEY_DecodeDERSubjectPublicKeyInfo(spkider: *const SECItemFFI) -> *mut CERTSubjectPublicKeyInfo;
     fn SECKEY_DestroySubjectPublicKeyInfo(cert: *mut CERTSubjectPublicKeyInfo);
     pub fn SECKEY_ExtractPublicKey(cert_subject: *const CERTSubjectPublicKeyInfo) -> *mut SECKEYPublicKey;
-    pub fn PK11_ImportDERPrivateKeyInfoAndReturnKey(slot: *mut PK11SlotInfo, derPKI: *mut SECItem, nickname: *mut SECItem,
-                                                    publicValue: *mut SECItem, isPerm: PRBool, isPrivate: PRBool, usage: c_uint,
+    pub fn PK11_ImportDERPrivateKeyInfoAndReturnKey(slot: *mut PK11SlotInfo, derPKI: *mut SECItemFFI, nickname: *mut SECItemFFI,
+                                                    publicValue: *mut SECItemFFI, isPerm: PRBool, isPrivate: PRBool, usage: c_uint,
                                                     privk: *mut *mut SECKEYPrivateKey, wincx: *mut c_void) -> SECStatus;
-    pub fn PK11_PubEncrypt(key: *mut SECKEYPublicKey, mechanism: CK_MECHANISM_TYPE, param: *mut SECItem, out: *mut u8,
+    pub fn PK11_PubEncrypt(key: *mut SECKEYPublicKey, mechanism: CK_MECHANISM_TYPE, param: *mut SECItemFFI, out: *mut u8,
                            out_len: *mut c_uint, max_len: c_uint, data: *const u8, data_len: c_uint, wincx: *mut c_void) -> SECStatus;
     pub fn SECKEY_PublicKeyStrength(key: *const SECKEYPublicKey) -> c_uint;
-    pub fn PK11_PrivDecrypt(key: *mut SECKEYPrivateKey, mechanism: CK_MECHANISM_TYPE, param: *mut SECItem,
+    pub fn PK11_PrivDecrypt(key: *mut SECKEYPrivateKey, mechanism: CK_MECHANISM_TYPE, param: *mut SECItemFFI,
                             out: *mut u8, out_len: *mut c_uint, max_len: c_uint, enc: *const u8, enc_len: c_uint) -> SECStatus;
     pub fn PK11_GenerateKeyPair(slot: *mut PK11SlotInfo, kind: CK_MECHANISM_TYPE, param: *mut c_void, pub_key: *mut *mut SECKEYPublicKey,
                                 token: PRBool, sensitive: PRBool, wincx: *mut c_void) -> *mut SECKEYPrivateKey;
-    pub fn SECKEY_EncodeDERSubjectPublicKeyInfo(pubk: *const SECKEYPublicKey) -> *mut SECItem;
-    pub fn PK11_ExportDERPrivateKeyInfo(privk: *mut SECKEYPrivateKey, wincx: *mut c_void) -> *mut SECItem;
+    pub fn SECKEY_EncodeDERSubjectPublicKeyInfo(pubk: *const SECKEYPublicKey) -> *mut SECItemFFI;
+    pub fn PK11_ExportDERPrivateKeyInfo(privk: *mut SECKEYPrivateKey, wincx: *mut c_void) -> *mut SECItemFFI;
 }

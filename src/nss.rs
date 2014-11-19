@@ -12,7 +12,7 @@ pub fn init() -> NSSResult<()>
         let _guard = INITLOCK.lock();
         if INIT_STATUS == true { return Ok(()); }
 
-        nspr::PR_Init(nspr::PR_SYSTEM_THREAD, nspr::PR_PRIORITY_NORMAL, 0);
+        nspr::PR_Init(nspr::PRThreadType::PR_SYSTEM_THREAD, nspr::PRThreadPriority::PR_PRIORITY_NORMAL, 0);
         match nss::NSS_NoDB_Init(::std::ptr::null_mut()).to_result()
         {
             Ok(..) => { INIT_STATUS = true; Ok(()) },

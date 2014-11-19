@@ -1,4 +1,4 @@
-use result;
+use result::NSSError;
 use libc::c_uint;
 use std::c_str::CString;
 
@@ -31,14 +31,14 @@ pub enum PRStatus
 #[repr(C)]
 pub enum PRBool
 {
-    PR_True = 1,
-    PR_False = 0,
+    True = 1,
+    False = 0,
 }
 
-pub fn get_error_code() -> result::NSSError
+pub fn get_error_code() -> NSSError
 {
     let code = unsafe { PR_GetError() };
-    result::NSS(code)
+    NSSError::NSS(code)
 }
 
 pub fn get_error_message(code: i32) -> Option<CString>

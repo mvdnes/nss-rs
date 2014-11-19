@@ -1,6 +1,6 @@
 use result::NSSResult;
 use ffi::{pk11, sec};
-use ffi::nspr::PR_False;
+use ffi::nspr::PRBool;
 use std::{ptr, mem};
 use libc::{c_uint, c_int, c_void};
 
@@ -23,12 +23,12 @@ enum RSAPaddingParam
 
 impl RSAPaddingParam
 {
-    fn to_secitem<'a>(&'a self) -> sec::SECItemBox<'a>
+    fn to_secitem<'a>(&'a self) -> sec::SECItem<'a>
     {
         match *self
         {
-            NullParam => sec::SECItemBox::empty(),
-            OAEPParam(ref param) => sec::SECItemBox::from_struct(param),
+            RSAPaddingParam::NullParam => sec::SECItem::empty(),
+            RSAPaddingParam::OAEPParam(ref param) => sec::SECItem::from_struct(param),
         }
     }
 }
@@ -39,12 +39,12 @@ impl RSAPadding
     {
         match *self
         {
-            PKCS1v15 => pk11::CKM_RSA_PKCS,
-            OAEP_MGF1_SHA1
-            | OAEP_MGF1_SHA224
-            | OAEP_MGF1_SHA256
-            | OAEP_MGF1_SHA384
-            | OAEP_MGF1_SHA512 => pk11::CKM_RSA_PKCS_OAEP,
+            RSAPadding::PKCS1v15 => pk11::CKM_RSA_PKCS,
+            RSAPadding::OAEP_MGF1_SHA1
+            | RSAPadding::OAEP_MGF1_SHA224
+            | RSAPadding::OAEP_MGF1_SHA256
+            | RSAPadding::OAEP_MGF1_SHA384
+            | RSAPadding::OAEP_MGF1_SHA512 => pk11::CKM_RSA_PKCS_OAEP,
         }
     }
 
@@ -52,12 +52,12 @@ impl RSAPadding
     {
         match *self
         {
-            PKCS1v15 => NullParam,
-            OAEP_MGF1_SHA1 => OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_1)),
-            OAEP_MGF1_SHA224 => OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_224)),
-            OAEP_MGF1_SHA256 => OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_256)),
-            OAEP_MGF1_SHA384 => OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_384)),
-            OAEP_MGF1_SHA512 => OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_512)),
+            RSAPadding::PKCS1v15 => RSAPaddingParam::NullParam,
+            RSAPadding::OAEP_MGF1_SHA1 => RSAPaddingParam::OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_1)),
+            RSAPadding::OAEP_MGF1_SHA224 => RSAPaddingParam::OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_224)),
+            RSAPadding::OAEP_MGF1_SHA256 => RSAPaddingParam::OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_256)),
+            RSAPadding::OAEP_MGF1_SHA384 => RSAPaddingParam::OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_384)),
+            RSAPadding::OAEP_MGF1_SHA512 => RSAPaddingParam::OAEPParam(pk11::CK_RSA_PKCS_OAEP_PARAMS::from_algorithm(pk11::CKM_SHA_512)),
         }
     }
 }
@@ -73,14 +73,14 @@ impl RSAPrivateKey
     {
         try!(::nss::init());
 
-        let mut der = sec::SECItemBox::from_buf(data);
+        let mut der = sec::SECItem::from_buf(data);
         let slot = try!(pk11::SlotInfo::get_internal());
         let mut key = ptr::null_mut();
 
         let pkey = unsafe
         {
             try!(pk11::PK11_ImportDERPrivateKeyInfoAndReturnKey(slot.get_mut(), der.get_mut(), ptr::null_mut(),
-                                                                ptr::null_mut(), PR_False, PR_False, pk11::KU_ALL,
+                                                                ptr::null_mut(), PRBool::False, PRBool::False, pk11::KU_ALL,
                                                                 &mut key, ptr::null_mut()).to_result());
             try!(pk11::PrivateKey::wrap(key))
         };
@@ -101,7 +101,7 @@ impl RSAPrivateKey
             let param_ptr = mem::transmute::<_, *mut c_void>(&mut param);
             try!(pk11::PrivateKey::wrap(
                     pk11::PK11_GenerateKeyPair(slot.get_mut(), pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr,
-                                               &mut pubkey, PR_False, PR_False, ptr::null_mut())
+                                               &mut pubkey, PRBool::False, PRBool::False, ptr::null_mut())
                     )
                 )
         };
@@ -114,7 +114,7 @@ impl RSAPrivateKey
     {
         let secitem = unsafe
         {
-            try!(sec::SECItemBox::wrap(pk11::PK11_ExportDERPrivateKeyInfo(self.key.get_mut(), ptr::null_mut())))
+            try!(sec::SECItem::wrap(pk11::PK11_ExportDERPrivateKeyInfo(self.key.get_mut(), ptr::null_mut())))
         };
         let result = secitem.copy_buf();
         Ok(result)
@@ -174,7 +174,7 @@ impl RSAPublicKey
     {
         try!(::nss::init());
 
-        let der = sec::SECItemBox::from_buf(data);
+        let der = sec::SECItem::from_buf(data);
 
         let key = unsafe
         {
@@ -189,7 +189,7 @@ impl RSAPublicKey
     {
         let secitem = unsafe
         {
-            try!(sec::SECItemBox::wrap(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key.get())))
+            try!(sec::SECItem::wrap(pk11::SECKEY_EncodeDERSubjectPublicKeyInfo(self.key.get())))
         };
 
         let result = secitem.copy_buf();
@@ -243,7 +243,7 @@ mod test
         let priv_der = PRIV_BASE64.from_base64().unwrap();
         let privkey = super::RSAPrivateKey::load(priv_der.as_slice()).unwrap();
 
-        let message = privkey.decrypt(super::OAEP_MGF1_SHA1, encrypted.as_slice()).unwrap();
+        let message = privkey.decrypt(super::RSAPadding::OAEP_MGF1_SHA1, encrypted.as_slice()).unwrap();
         assert_eq!(b"Encrypt Me!", message.as_slice());
     }
 
