@@ -10,7 +10,7 @@ pub enum NSSError
 
 impl fmt::Show for NSSError
 {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::FormatError>
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error>
     {
         match *self
         {
