@@ -1,44 +1,58 @@
-use sync::mutex::{StaticMutex, MUTEX_INIT};
+use std::sync::atomic::{AtomicBool, INIT_ATOMIC_BOOL, Ordering};
 use result::NSSResult;
 use ffi::{nss, nspr};
 
-static mut INITLOCK: StaticMutex = MUTEX_INIT;
-static mut INIT_STATUS : bool = false;
+static NSSBUSY: AtomicBool = INIT_ATOMIC_BOOL;
+static NSSINIT: AtomicBool = INIT_ATOMIC_BOOL;
 
 pub fn init() -> NSSResult<()>
 {
-    unsafe
-    {
-        let _guard = INITLOCK.lock();
-        if INIT_STATUS == true { return Ok(()); }
+    while NSSBUSY.compare_and_swap(false, true, Ordering::SeqCst) != false {};
 
-        nspr::PR_Init(nspr::PRThreadType::PR_SYSTEM_THREAD, nspr::PRThreadPriority::PR_PRIORITY_NORMAL, 0);
-        match nss::NSS_NoDB_Init(::std::ptr::null_mut()).to_result()
+    let result =
+    if NSSINIT.load(Ordering::SeqCst) == false {
+        unsafe { nspr::PR_Init(nspr::PRThreadType::PR_SYSTEM_THREAD, nspr::PRThreadPriority::PR_PRIORITY_NORMAL, 0) };
+        match unsafe { nss::NSS_NoDB_Init(::std::ptr::null_mut()).to_result() }
         {
-            Ok(..) => { INIT_STATUS = true; Ok(()) },
-            Err(e) => Err(e),
-        }
-    }
-}
-
-pub fn close() -> NSSResult<()>
-{
-    unsafe
-    {
-        let _guard = INITLOCK.lock();
-        if INIT_STATUS == false { return Ok(()); }
-
-        match nss::NSS_Shutdown().to_result()
-        {
-            Ok(..) =>
-            {
-                nspr::PR_Cleanup();
-                INIT_STATUS = false;
+            Ok(..) => {
+                NSSINIT.store(true, Ordering::SeqCst);
                 Ok(())
             },
             Err(e) => Err(e),
         }
     }
+    else {
+        Ok(())
+    };
+
+    NSSBUSY.store(false, Ordering::SeqCst);
+
+    result
+}
+
+pub fn close() -> NSSResult<()>
+{
+    while NSSBUSY.compare_and_swap(false, true, Ordering::SeqCst) != false {};
+
+    let result =
+    if NSSINIT.load(Ordering::SeqCst) == true {
+        match unsafe { nss::NSS_Shutdown().to_result() }
+        {
+            Ok(..) => {
+                unsafe { nspr::PR_Cleanup() };
+                NSSINIT.store(false, Ordering::SeqCst);
+                Ok(())
+            },
+            Err(e) => Err(e),
+        }
+    }
+    else {
+        Ok(())
+    };
+
+    NSSBUSY.store(false, Ordering::SeqCst);
+
+    result
 }
 
 #[cfg(test)]
