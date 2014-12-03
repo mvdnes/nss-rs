@@ -13,7 +13,7 @@ fn doit() -> nss::result::NSSResult<()>
     let priv_der = PRIV_BASE64.from_base64().unwrap();
 
     let pubkey = try!(pkey::RSAPublicKey::load(pub_der.as_slice()));
-    let enc = try!(pubkey.encrypt(pkey::OAEP_MGF1_SHA1, b"Encrypt Me!"));
+    let enc = try!(pubkey.encrypt(pkey::RSAPadding::OAEP_MGF1_SHA1, b"Encrypt Me!"));
     print!("Encoded:");
     for b in enc.iter()
     {
@@ -22,7 +22,7 @@ fn doit() -> nss::result::NSSResult<()>
     println!("");
 
     let privkey = try!(pkey::RSAPrivateKey::load(priv_der.as_slice()));
-    let dec = try!(privkey.decrypt(pkey::OAEP_MGF1_SHA1, enc.as_slice()));
+    let dec = try!(privkey.decrypt(pkey::RSAPadding::OAEP_MGF1_SHA1, enc.as_slice()));
     println!("Decoded: {}", String::from_utf8(dec).unwrap());
 
     Ok(())
