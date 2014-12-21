@@ -5,6 +5,7 @@ use std::{ptr, mem};
 use libc::{c_uint, c_int, c_void};
 
 #[allow(non_camel_case_types)]
+#[deriving(Copy)]
 pub enum RSAPadding
 {
     PKCS1v15,
