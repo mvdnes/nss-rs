@@ -191,15 +191,15 @@ macro_rules! create_wrapper(
         }
 
     );
-)
+);
 
 unsafe fn context_destructor(context: *mut PK11Context) { PK11_DestroyContext(context, PRBool::True); }
 
-create_wrapper!(SymKey, PK11SymKey, PK11_FreeSymKey)
-create_wrapper!(Context, PK11Context, context_destructor)
-create_wrapper!(PrivateKey, SECKEYPrivateKey, SECKEY_DestroyPrivateKey)
-create_wrapper!(PublicKey, SECKEYPublicKey, SECKEY_DestroyPublicKey)
-create_wrapper!(PublicKeyInfo, CERTSubjectPublicKeyInfo, SECKEY_DestroySubjectPublicKeyInfo)
+create_wrapper!(SymKey, PK11SymKey, PK11_FreeSymKey);
+create_wrapper!(Context, PK11Context, context_destructor);
+create_wrapper!(PrivateKey, SECKEYPrivateKey, SECKEY_DestroyPrivateKey);
+create_wrapper!(PublicKey, SECKEYPublicKey, SECKEY_DestroyPublicKey);
+create_wrapper!(PublicKeyInfo, CERTSubjectPublicKeyInfo, SECKEY_DestroySubjectPublicKeyInfo);
 
 pub const KU_ALL : c_uint = 0xFF;
 pub const CKZ_DATA_SPECIFIED : c_ulong = 0x0000_0001;
