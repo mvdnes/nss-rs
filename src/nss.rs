@@ -1,9 +1,9 @@
-use std::sync::atomic::{AtomicBool, INIT_ATOMIC_BOOL, Ordering};
+use std::sync::atomic::{AtomicBool, ATOMIC_BOOL_INIT, Ordering};
 use result::NSSResult;
 use ffi::{nss, nspr};
 
-static NSSBUSY: AtomicBool = INIT_ATOMIC_BOOL;
-static NSSINIT: AtomicBool = INIT_ATOMIC_BOOL;
+static NSSBUSY: AtomicBool = ATOMIC_BOOL_INIT;
+static NSSINIT: AtomicBool = ATOMIC_BOOL_INIT;
 
 pub fn init() -> NSSResult<()>
 {
