@@ -18,7 +18,10 @@ impl fmt::Show for NSSError
             NSSError::NSS(code) => {
                 match ::ffi::nspr::get_error_message(code)
                 {
-                    Some(message) => formatter.write(message.as_bytes()),
+                    Some(message) => {
+                        let message_str = String::from_utf8_lossy(message.as_bytes());
+                        formatter.write_str(&*message_str)
+                    },
                     None => write!(formatter, "Unknown error {}", code),
                 }
             },
