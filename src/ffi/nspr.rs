@@ -1,6 +1,6 @@
 use result::NSSError;
 use libc::c_uint;
-use std::c_str::CString;
+use std::ffi::c_str_to_bytes;
 
 #[repr(C)]
 #[allow(dead_code)] // List all available options
@@ -41,7 +41,7 @@ pub fn get_error_code() -> NSSError
     NSSError::NSS(code)
 }
 
-pub fn get_error_message(code: i32) -> Option<CString>
+pub fn get_error_message(code: i32) -> Option<String>
 {
     if !error_code_exists(code) {
         return None;
@@ -51,7 +51,8 @@ pub fn get_error_message(code: i32) -> Option<CString>
     unsafe
     {
         let cmessage = PR_ErrorToString(code, LANG_EN);
-        Some(CString::new(cmessage, false))
+        let rmessage = String::from_utf8_lossy(c_str_to_bytes(&cmessage));
+        Some(rmessage.into_owned())
     }
 }
 
