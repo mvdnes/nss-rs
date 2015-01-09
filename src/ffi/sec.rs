@@ -3,7 +3,7 @@ use ffi::nspr;
 use ffi::nspr::PRBool;
 use libc::{c_uint, c_uchar};
 use std::{mem, ptr};
-use std::kinds::marker::ContravariantLifetime;
+use std::marker::ContravariantLifetime;
 
 #[must_use]
 #[repr(C)]
