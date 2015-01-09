@@ -1,3 +1,5 @@
+#![allow(unstable)]
+
 extern crate nss;
 
 use nss::crypto::pkey;

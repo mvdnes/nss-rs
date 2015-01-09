@@ -4,6 +4,10 @@ name = "nss"
 version = "0.0.1"
 authors = ["Mathijs van de Nes <git@mathijs.vd-nes.nl>"]
 
+[dependencies]
+log = "*"
+rustc-serialize = "*"
+
 [[bin]]
 name = "nss2"
 test = false

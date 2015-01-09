@@ -1,4 +1,6 @@
-extern crate serialize;
+#![allow(unstable)]
+
+extern crate "rustc-serialize" as serialize;
 extern crate nss;
 
 use nss::crypto::pkey;

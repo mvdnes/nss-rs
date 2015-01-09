@@ -1,4 +1,5 @@
 #![feature(unsafe_destructor)]
+#![allow(unstable)]
 
 extern crate libc;
 #[macro_use] extern crate log;

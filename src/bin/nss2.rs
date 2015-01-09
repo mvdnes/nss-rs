@@ -3,6 +3,8 @@
  * https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/NSS_Sample_Code/NSS_Sample_Code_sample2
  */
 
+#![allow(unstable)]
+
 extern crate nss;
 
 use nss::crypto::symm;
