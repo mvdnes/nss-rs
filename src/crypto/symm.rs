@@ -96,7 +96,7 @@ impl Crypter
                                      in_buf.as_ptr(), in_buf.len() as ::libc::c_int)
                  .to_result()
             );
-            out_buf.set_len(outlen as uint);
+            out_buf.set_len(outlen as usize);
         }
 
         Ok(out_buf)
@@ -118,7 +118,7 @@ impl Crypter
                                         out_buf.capacity() as ::libc::c_uint)
                  .to_result()
             );
-            out_buf.set_len(outlen as uint);
+            out_buf.set_len(outlen as usize);
         }
 
         result.extend(out_buf.into_iter());

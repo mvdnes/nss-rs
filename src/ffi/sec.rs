@@ -136,7 +136,7 @@ impl<'a> SECItem<'a>
     pub fn copy_buf(&self) -> Vec<u8>
     {
         let si = self.get();
-        let buf : &[u8] = unsafe { mem::transmute(::std::raw::Slice { data: si.data, len: si.len as uint, }) };
+        let buf : &[u8] = unsafe { mem::transmute(::std::raw::Slice { data: si.data, len: si.len as usize, }) };
         buf.to_vec()
     }
 }

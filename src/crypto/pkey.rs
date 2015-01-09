@@ -89,7 +89,7 @@ impl RSAPrivateKey
         Ok(RSAPrivateKey { key: pkey })
     }
 
-    pub fn gen(key_size_bits: uint) -> NSSResult<RSAPrivateKey>
+    pub fn gen(key_size_bits: u32) -> NSSResult<RSAPrivateKey>
     {
         try!(::nss::init());
 
@@ -121,7 +121,7 @@ impl RSAPrivateKey
         Ok(result)
     }
 
-    pub fn key_len(&self) -> uint
+    pub fn key_len(&self) -> usize
     {
         match self.get_public()
         {
@@ -148,7 +148,7 @@ impl RSAPrivateKey
         {
             try!(pk11::PK11_PrivDecrypt(self.key.get_mut(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                         &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint).to_result());
-            out.set_len(outlen as uint);
+            out.set_len(outlen as usize);
         }
 
         Ok(out)
@@ -197,11 +197,11 @@ impl RSAPublicKey
         Ok(result)
     }
 
-    pub fn key_len(&self) -> uint
+    pub fn key_len(&self) -> usize
     {
         unsafe
         {
-            pk11::SECKEY_PublicKeyStrength(self.key.get()) as uint
+            pk11::SECKEY_PublicKeyStrength(self.key.get()) as usize
         }
     }
 
@@ -219,7 +219,7 @@ impl RSAPublicKey
             try!(pk11::PK11_PubEncrypt(self.key.get_mut(), padding.to_ckm(), secitem.get_mut(), out.as_mut_ptr(),
                                        &mut outlen, out.capacity() as c_uint, data.as_ptr(), data.len() as c_uint,
                                        ptr::null_mut()).to_result());
-            out.set_len(outlen as uint);
+            out.set_len(outlen as usize);
         }
 
         Ok(out)
