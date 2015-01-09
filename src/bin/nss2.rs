@@ -41,7 +41,7 @@ fn main()
     let result = doit();
     match result.err()
     {
-        Some(m) => println!("{}", m),
+        Some(m) => println!("{:?}", m),
         None => {},
     }
     let _ = nss::close();

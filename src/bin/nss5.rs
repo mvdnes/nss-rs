@@ -32,6 +32,6 @@ fn doit() -> nss::result::NSSResult<()>
 
 fn main()
 {
-    println!("{}", doit());
+    println!("{:?}", doit());
     let _ = nss::close();
 }

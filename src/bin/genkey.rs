@@ -25,8 +25,8 @@ fn main()
     let mut priv_file = std::io::File::create(&priv_path).unwrap();
     let mut pub_file = std::io::File::create(&pub_path).unwrap();
 
-    println!("pub : {}", pub_file.write(pub_der.as_slice()));
-    println!("priv: {}", priv_file.write(priv_der.as_slice()));
+    println!("pub : {:?}", pub_file.write(pub_der.as_slice()));
+    println!("priv: {:?}", priv_file.write(priv_der.as_slice()));
     let _ = nss::close();
 }
 
