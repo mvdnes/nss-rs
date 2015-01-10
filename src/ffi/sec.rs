@@ -75,6 +75,7 @@ impl SECItem<'static>
         }
     }
 
+    #[allow(unstable)]
     pub fn empty() -> SECItem<'static>
     {
         SECItem::Data(SECItemFFI {
@@ -87,6 +88,7 @@ impl SECItem<'static>
 
 impl<'a> SECItem<'a>
 {
+    #[allow(unstable)]
     pub fn from_buf(buffer: &'a [u8]) -> SECItem<'a>
     {
         let si = SECItemFFI
@@ -98,6 +100,7 @@ impl<'a> SECItem<'a>
         SECItem::Data(si, ContravariantLifetime)
     }
 
+    #[allow(unstable)]
     pub fn from_struct<T>(data: &'a T) -> SECItem<'a>
     {
         let len = mem::size_of::<T>() as c_uint;
@@ -115,6 +118,7 @@ impl<'a> SECItem<'a>
         SECItem::Data(si, ContravariantLifetime)
     }
 
+    #[allow(unstable)]
     pub fn get<'b>(&'b self) -> &'b SECItemFFI
     {
         match *self
@@ -124,6 +128,7 @@ impl<'a> SECItem<'a>
         }
     }
 
+    #[allow(unstable)]
     pub fn get_mut<'b>(&'b mut self) -> &'b mut SECItemFFI
     {
         match *self
@@ -133,6 +138,7 @@ impl<'a> SECItem<'a>
         }
     }
 
+    #[allow(unstable)]
     pub fn copy_buf(&self) -> Vec<u8>
     {
         let si = self.get();

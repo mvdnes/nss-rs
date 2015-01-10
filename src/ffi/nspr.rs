@@ -41,6 +41,7 @@ pub fn get_error_code() -> NSSError
     NSSError::NSS(code)
 }
 
+#[allow(unstable)]
 pub fn get_error_message(code: i32) -> Option<String>
 {
     if !error_code_exists(code) {
