@@ -10,7 +10,7 @@ pub enum NSSError
 }
 
 #[allow(unstable)]
-impl fmt::Show for NSSError
+impl fmt::Display for NSSError
 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error>
     {
@@ -27,5 +27,14 @@ impl fmt::Show for NSSError
                 }
             },
         }
+    }
+}
+
+#[allow(unstable)]
+impl fmt::Debug for NSSError
+{
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error>
+    {
+        ::std::fmt::Display::fmt(self, fmt)
     }
 }
