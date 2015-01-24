@@ -7,18 +7,3 @@ authors = ["Mathijs van de Nes <git@mathijs.vd-nes.nl>"]
 [dependencies]
 log = "*"
 rustc-serialize = "*"
-
-[[bin]]
-name = "nss2"
-test = false
-doc = false
-
-[[bin]]
-name = "nss5"
-test = false
-doc = false
-
-[[bin]]
-name = "genkey"
-test = false
-doc = false
