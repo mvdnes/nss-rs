@@ -22,8 +22,8 @@ fn main()
     let priv_path = Path::new(args[1].as_slice());
     let pub_path = priv_path.with_extension("pub");
 
-    let mut priv_file = std::io::File::create(&priv_path).unwrap();
-    let mut pub_file = std::io::File::create(&pub_path).unwrap();
+    let mut priv_file = std::old_io::File::create(&priv_path).unwrap();
+    let mut pub_file = std::old_io::File::create(&pub_path).unwrap();
 
     println!("pub : {:?}", pub_file.write(pub_der.as_slice()));
     println!("priv: {:?}", priv_file.write(priv_der.as_slice()));
