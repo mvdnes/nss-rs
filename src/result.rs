@@ -9,7 +9,6 @@ pub enum NSSError
     NSS(i32),
 }
 
-#[allow(unstable)]
 impl fmt::Display for NSSError
 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error>
@@ -30,7 +29,6 @@ impl fmt::Display for NSSError
     }
 }
 
-#[allow(unstable)]
 impl fmt::Debug for NSSError
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error>

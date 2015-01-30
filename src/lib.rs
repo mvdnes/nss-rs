@@ -1,7 +1,6 @@
 #![feature(unsafe_destructor)]
-#![cfg_attr(test, allow(unstable))]
+#![feature(libc, core, std_misc)]
 
-#[allow(unstable)]
 extern crate libc;
 
 #[macro_use]

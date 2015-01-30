@@ -3,8 +3,6 @@
  * https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/NSS_Sample_Code/NSS_Sample_Code_sample2
  */
 
-#![allow(unstable)]
-
 extern crate nss;
 
 use nss::crypto::symm;
@@ -28,9 +26,9 @@ fn doit() -> nss::result::NSSResult<()>
     println!("");
 
     let mut crypt = try!(symm::Crypter::new(symm::Kind::DES_CBC_PAD, symm::Mode::Decrypt, key, iv));
-    let dec = try!(crypt.finalize(out.as_slice()));
+    let dec = try!(crypt.finalize(&*out));
 
-    println!("Decrypted Data: {}", String::from_utf8_lossy(dec.as_slice()));
+    println!("Decrypted Data: {}", String::from_utf8_lossy(&*dec));
 
     Ok(())
 }

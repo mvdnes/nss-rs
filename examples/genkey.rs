@@ -1,4 +1,4 @@
-#![allow(unstable)]
+#![feature(io, path, os)]
 
 extern crate nss;
 
@@ -9,7 +9,7 @@ fn main()
     let args = std::os::args();
     if args.len() <= 1
     {
-        print_usage(args[0].as_slice());
+        print_usage(&*args[0]);
         return
     }
 
@@ -19,14 +19,14 @@ fn main()
     let pub_der = pubkey.save().unwrap();
     let priv_der = privkey.save().unwrap();
 
-    let priv_path = Path::new(args[1].as_slice());
+    let priv_path = Path::new(&*args[1]);
     let pub_path = priv_path.with_extension("pub");
 
     let mut priv_file = std::old_io::File::create(&priv_path).unwrap();
     let mut pub_file = std::old_io::File::create(&pub_path).unwrap();
 
-    println!("pub : {:?}", pub_file.write(pub_der.as_slice()));
-    println!("priv: {:?}", priv_file.write(priv_der.as_slice()));
+    println!("pub : {:?}", pub_file.write(&*pub_der));
+    println!("priv: {:?}", priv_file.write(&*priv_der));
     let _ = nss::close();
 }
 
