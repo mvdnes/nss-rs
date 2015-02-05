@@ -1,3 +1,5 @@
+#![feature(core)]
+
 extern crate "rustc-serialize" as serialize;
 extern crate nss;
 

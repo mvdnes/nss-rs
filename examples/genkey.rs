@@ -1,4 +1,4 @@
-#![feature(io, path, os)]
+#![feature(io, path, os, env)]
 
 extern crate nss;
 
@@ -6,7 +6,7 @@ use nss::crypto::pkey;
 
 fn main()
 {
-    let args = std::os::args();
+    let args = std::env::args().map(|v| v.into_string().unwrap()).collect::<Vec<_>>();
     if args.len() <= 1
     {
         print_usage(&*args[0]);
