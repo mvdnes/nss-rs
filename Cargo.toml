@@ -6,4 +6,6 @@ authors = ["Mathijs van de Nes <git@mathijs.vd-nes.nl>"]
 
 [dependencies]
 log = "*"
+
+[dev_dependencies]
 rustc-serialize = "*"
