@@ -1,5 +1,3 @@
-#![feature(core)]
-
 /*
  * Written like the example on:
  * https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS/NSS_Sample_Code/NSS_Sample_Code_sample2

@@ -3,7 +3,7 @@ use ffi::nspr;
 use ffi::nspr::PRBool;
 use libc::{c_uint, c_uchar};
 use std::{mem, ptr};
-use std::marker::ContravariantLifetime;
+use std::marker::PhantomData;
 
 #[must_use]
 #[repr(C)]
@@ -61,7 +61,8 @@ pub struct SECItemFFI
 pub enum SECItem<'a>
 {
     Boxed(*mut SECItemFFI),
-    Data(SECItemFFI, ContravariantLifetime<'a>)
+    // This struct contains PhantomData, to ensure SECItemFFi does not live too long
+    Data(SECItemFFI, PhantomData<&'a ()>)
 }
 
 impl SECItem<'static>
@@ -81,7 +82,7 @@ impl SECItem<'static>
             typ: SECItemType::Buffer,
             data: ptr::null(),
             len: 0,
-        }, ContravariantLifetime)
+        }, PhantomData)
     }
 }
 
@@ -95,7 +96,7 @@ impl<'a> SECItem<'a>
             data: buffer.as_ptr(),
             len: buffer.len() as c_uint,
         };
-        SECItem::Data(si, ContravariantLifetime)
+        SECItem::Data(si, PhantomData)
     }
 
     pub fn from_struct<T>(data: &'a T) -> SECItem<'a>
@@ -112,7 +113,7 @@ impl<'a> SECItem<'a>
             data: ptr,
             len: len,
         };
-        SECItem::Data(si, ContravariantLifetime)
+        SECItem::Data(si, PhantomData)
     }
 
     pub fn get<'b>(&'b self) -> &'b SECItemFFI

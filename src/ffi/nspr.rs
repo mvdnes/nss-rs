@@ -1,6 +1,6 @@
 use result::NSSError;
 use libc::c_uint;
-use std::ffi::c_str_to_bytes;
+use std::ffi::CStr;
 
 #[repr(C)]
 #[allow(dead_code)] // List all available options
@@ -51,7 +51,7 @@ pub fn get_error_message(code: i32) -> Option<String>
     unsafe
     {
         let cmessage = PR_ErrorToString(code, LANG_EN);
-        let rmessage = String::from_utf8_lossy(c_str_to_bytes(&cmessage));
+        let rmessage = String::from_utf8_lossy(CStr::from_ptr(cmessage).to_bytes());
         Some(rmessage.into_owned())
     }
 }
