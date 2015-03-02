@@ -242,10 +242,10 @@ mod test
         let encrypted = ENC_MESSAGE.from_base64().unwrap();
 
         let priv_der = PRIV_BASE64.from_base64().unwrap();
-        let privkey = super::RSAPrivateKey::load(priv_der.as_slice()).unwrap();
+        let privkey = super::RSAPrivateKey::load(&priv_der).unwrap();
 
-        let message = privkey.decrypt(super::RSAPadding::OAEP_MGF1_SHA1, encrypted.as_slice()).unwrap();
-        assert_eq!(b"Encrypt Me!", message.as_slice());
+        let message = privkey.decrypt(super::RSAPadding::OAEP_MGF1_SHA1, &encrypted).unwrap();
+        assert_eq!(b"Encrypt Me!", message);
     }
 
     #[test]
@@ -254,7 +254,7 @@ mod test
         let priv_der = PRIV_BASE64.from_base64().unwrap();
         let pub_der = PUB_BASE64.from_base64().unwrap();
 
-        let privkey = super::RSAPrivateKey::load(priv_der.as_slice()).unwrap();
+        let privkey = super::RSAPrivateKey::load(&priv_der).unwrap();
         let pubkey = privkey.get_public().unwrap();
 
         let derivedpub_der = pubkey.save().unwrap();

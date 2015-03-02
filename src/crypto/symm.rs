@@ -136,12 +136,12 @@ mod test
         let mut c = Crypter::new(super::Kind::AES_ECB, super::Mode::Encrypt, key, b"").unwrap();
 
         let p = c.finalize(plain).unwrap();
-        assert_eq!(p.as_slice(), result);
+        assert_eq!(p, result);
 
         let mut c = Crypter::new(super::Kind::AES_ECB, super::Mode::Decrypt, key, b"").unwrap();
 
         let r = c.finalize(result).unwrap();
-        assert_eq!(r.as_slice(), plain);
+        assert_eq!(r, plain);
     }
 
     #[test]
