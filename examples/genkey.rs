@@ -1,4 +1,4 @@
-#![feature(io, fs, path)]
+#![feature(io, path)]
 
 extern crate nss;
 
