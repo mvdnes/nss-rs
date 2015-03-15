@@ -1,5 +1,3 @@
-#![feature(io, path)]
-
 extern crate nss;
 
 use std::io::prelude::*;
