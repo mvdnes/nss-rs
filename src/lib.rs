@@ -1,5 +1,5 @@
 #![feature(unsafe_destructor)]
-#![feature(libc, core)]
+#![feature(libc)]
 
 extern crate libc;
 

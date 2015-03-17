@@ -120,7 +120,7 @@ impl<'a> SECItem<'a>
     {
         match *self
         {
-            SECItem::Boxed(ptr) => unsafe { ptr.as_ref().unwrap() },
+            SECItem::Boxed(ptr) => unsafe { &*ptr }, // Constructor should ensure ptr is not null
             SECItem::Data(ref si, _) => si,
         }
     }
@@ -129,7 +129,7 @@ impl<'a> SECItem<'a>
     {
         match *self
         {
-            SECItem::Boxed(ptr) => unsafe { ptr.as_mut().unwrap() },
+            SECItem::Boxed(ptr) => unsafe { &mut *ptr }, // Constructor should ensure ptr is not null
             SECItem::Data(ref mut si, _) => si,
         }
     }
