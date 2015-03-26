@@ -229,7 +229,7 @@ impl RSAPublicKey
 #[cfg(test)]
 mod test
 {
-    extern crate "rustc-serialize" as serialize;
+    extern crate rustc_serialize as serialize;
     use self::serialize::base64::FromBase64;
 
     static PUB_BASE64 : &'static [u8] = b"MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAL3F6TIc3JEYsugo+a2fPU3W+Epv/FeIX21DC86WYnpFtW4srFtz2oNUzyLUzDHZdb+k//8dcT3IAOzUUi3R2eMCAwEAAQ==";
