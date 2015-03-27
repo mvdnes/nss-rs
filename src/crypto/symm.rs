@@ -68,7 +68,7 @@ impl Crypter
 
         let context = unsafe
         {
-            let sym_key =
+            let mut sym_key =
                 try!(
                     pk11::SymKey::wrap(
                         pk11::PK11_ImportSymKey(slot.get_mut(), mech,

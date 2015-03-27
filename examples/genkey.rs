@@ -12,7 +12,7 @@ fn main()
         return
     }
 
-    let privkey = pkey::RSAPrivateKey::gen(2048).unwrap();
+    let mut privkey = pkey::RSAPrivateKey::gen(2048).unwrap();
     let pubkey = privkey.get_public().unwrap();
 
     let pub_der = pubkey.save().unwrap();

@@ -111,7 +111,7 @@ impl RSAPrivateKey
         Ok(RSAPrivateKey { key: privkey })
     }
 
-    pub fn save(&self) -> NSSResult<Vec<u8>>
+    pub fn save(&mut self) -> NSSResult<Vec<u8>>
     {
         let secitem = unsafe
         {
@@ -121,7 +121,7 @@ impl RSAPrivateKey
         Ok(result)
     }
 
-    pub fn key_len(&self) -> usize
+    pub fn key_len(&mut self) -> usize
     {
         match self.get_public()
         {
@@ -130,13 +130,13 @@ impl RSAPrivateKey
         }
     }
 
-    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
+    pub fn encrypt(&mut self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
-        let public = try!(self.get_public());
+        let mut public = try!(self.get_public());
         public.encrypt(padding, data)
     }
 
-    pub fn decrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
+    pub fn decrypt(&mut self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
         let mut out = Vec::with_capacity(self.key_len());
         let mut outlen = 0;
@@ -154,7 +154,7 @@ impl RSAPrivateKey
         Ok(out)
     }
 
-    pub fn get_public(&self) -> NSSResult<RSAPublicKey>
+    pub fn get_public(&mut self) -> NSSResult<RSAPublicKey>
     {
         let mypub = unsafe
         {
@@ -205,7 +205,7 @@ impl RSAPublicKey
         }
     }
 
-    pub fn encrypt(&self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
+    pub fn encrypt(&mut self, padding: RSAPadding, data: &[u8]) -> NSSResult<Vec<u8>>
     {
         let mut out = Vec::with_capacity(self.key_len());
         let mut outlen = 0;
@@ -242,7 +242,7 @@ mod test
         let encrypted = ENC_MESSAGE.from_base64().unwrap();
 
         let priv_der = PRIV_BASE64.from_base64().unwrap();
-        let privkey = super::RSAPrivateKey::load(&priv_der).unwrap();
+        let mut privkey = super::RSAPrivateKey::load(&priv_der).unwrap();
 
         let message = privkey.decrypt(super::RSAPadding::OAEP_MGF1_SHA1, &encrypted).unwrap();
         assert_eq!(b"Encrypt Me!", message);
@@ -254,7 +254,7 @@ mod test
         let priv_der = PRIV_BASE64.from_base64().unwrap();
         let pub_der = PUB_BASE64.from_base64().unwrap();
 
-        let privkey = super::RSAPrivateKey::load(&priv_der).unwrap();
+        let mut privkey = super::RSAPrivateKey::load(&priv_der).unwrap();
         let pubkey = privkey.get_public().unwrap();
 
         let derivedpub_der = pubkey.save().unwrap();

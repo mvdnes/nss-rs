@@ -172,11 +172,11 @@ macro_rules! create_wrapper(
             #[allow(dead_code)]
             pub fn get(&self) -> *const $ffiname
             {
-                self.ptr as *const $ffiname
+                self.ptr
             }
 
             #[allow(dead_code)]
-            pub fn get_mut(&self) -> *mut $ffiname
+            pub fn get_mut(&mut self) -> *mut $ffiname
             {
                 self.ptr
             }
