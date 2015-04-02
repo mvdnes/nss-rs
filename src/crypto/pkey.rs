@@ -245,7 +245,7 @@ mod test
         let mut privkey = super::RSAPrivateKey::load(&priv_der).unwrap();
 
         let message = privkey.decrypt(super::RSAPadding::OAEP_MGF1_SHA1, &encrypted).unwrap();
-        assert_eq!(b"Encrypt Me!", message);
+        assert_eq!(b"Encrypt Me!", &*message);
     }
 
     #[test]
