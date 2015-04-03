@@ -1,10 +1,7 @@
 #![feature(unsafe_destructor)]
-#![feature(libc)]
 
 extern crate libc;
-
-#[macro_use]
-extern crate log;
+#[macro_use] extern crate log;
 
 pub use nss::{init, close};
 
