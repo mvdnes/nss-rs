@@ -142,7 +142,6 @@ impl<'a> SECItem<'a>
     }
 }
 
-#[unsafe_destructor]
 impl<'a> Drop for SECItem<'a>
 {
     fn drop(&mut self)
