@@ -2,7 +2,7 @@ use result::NSSResult;
 use ffi::{pk11, sec};
 use std::ptr;
 
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum Mode
 {
     Encrypt,
@@ -22,7 +22,7 @@ impl Mode
 }
 
 #[allow(non_camel_case_types)]
-#[derive(Copy)]
+#[derive(Copy, Clone)]
 pub enum Kind
 {
     AES_ECB,
