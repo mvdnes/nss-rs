@@ -5,7 +5,6 @@ version = "0.1.0"
 authors = ["Mathijs van de Nes <git@mathijs.vd-nes.nl>"]
 
 [dependencies]
-log = "^0.3.1"
 libc = "^0.1.5"
 
 [dev_dependencies]

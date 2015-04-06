@@ -1,5 +1,4 @@
 extern crate libc;
-#[macro_use] extern crate log;
 
 pub use nss::{init, close};
 
