@@ -3,7 +3,7 @@ nss-rs
 
 [![Build Status](https://travis-ci.org/mvdnes/nss-rs.svg?branch=master)](https://travis-ci.org/mvdnes/nss-rs)
 
-[Documentation](https://mvdnes.github.io/nss-rs/nss/index.html)
+[Documentation](https://mvdnes.github.io/rust-docs/nss-rs/nss/index.html)
 
 Rust bindings for [NSS](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/NSS).
 

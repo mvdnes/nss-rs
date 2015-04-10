@@ -11,10 +11,6 @@ notifications:
         on_success: never
         on_failure: always
 
-env:
-    global:
-        secure: "gItlqVnR8TH9C9XFnMkiJnymBK8neHwt5xwGKUwRhQ1u4aiu4j38W6psV+b53N+fomOUeLbxNrbp+zpQTaqC3Ro2fWbp8sXpJIle1shdBbdmgEz5kNvLMWUzGcyjmoVXaj3tRIGdsi0qWiHQM6beq4/Ph02Y68p22BX+2conbH8="
-
 script:
     - cargo build
     - cargo test
