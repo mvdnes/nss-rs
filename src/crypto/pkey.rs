@@ -1,7 +1,7 @@
 use result::NSSResult;
 use ffi::{pk11, sec};
 use ffi::nspr::PRBool;
-use std::{ptr, mem};
+use std::ptr;
 use libc::{c_uint, c_int, c_void};
 
 #[allow(non_camel_case_types)]
@@ -96,10 +96,10 @@ impl RSAPrivateKey
         let slot = try!(pk11::SlotInfo::get_internal());
         let mut param = pk11::PK11RSAGenParams { key_size_bits: key_size_bits as c_int, pe: 65537, };
         let mut pubkey = ptr::null_mut();
+        let param_ptr = &mut param as *mut _ as *mut c_void;
 
         let privkey = unsafe
         {
-            let param_ptr = mem::transmute::<_, *mut c_void>(&mut param);
             try!(pk11::PrivateKey::wrap(
                     pk11::PK11_GenerateKeyPair(slot.get_mut(), pk11::CKM_RSA_PKCS_KEY_PAIR_GEN, param_ptr,
                                                &mut pubkey, PRBool::False, PRBool::False, ptr::null_mut())

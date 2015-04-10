@@ -105,7 +105,7 @@ impl<'a> SECItem<'a>
         let ptr = match len
         {
             0 => ptr::null(),
-            _ => unsafe { mem::transmute(data) },
+            _ => data as *const _ as *const c_uchar
         };
         let si = SECItemFFI
         {
