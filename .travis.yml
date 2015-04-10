@@ -22,4 +22,4 @@ script:
     - rustdoc --test README.md -L target
 
 after_success:
-    - .travis/publish_doc.sh
+    - .travis/travis-doc-upload.sh
