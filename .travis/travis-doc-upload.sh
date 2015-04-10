@@ -7,7 +7,7 @@ set -e
 
 SCRIPT_PATH=.travis
 
-. ./$SCRIPT_PATH/travis-doc-upload.cfg
+. $SCRIPT_PATH/travis-doc-upload.cfg
 
 [ "$TRAVIS_BRANCH" = master ]
 
@@ -36,3 +36,5 @@ for i in {0..5}; do
     git push -q origin gh-pages && break # redo when push fails
     git pull -r || break # give up if rebase fails
 done
+
+echo "Doc upload completed"
