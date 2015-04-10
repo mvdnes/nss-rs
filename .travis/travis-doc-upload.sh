@@ -9,11 +9,22 @@ SCRIPT_PATH=.travis
 
 . $SCRIPT_PATH/travis-doc-upload.cfg
 
+echo $TRAVIS_BRANCH...
+
 [ "$TRAVIS_BRANCH" = master ]
+
+echo "branch ok"
+echo $TRAVIS_PULL_REQUEST...
 
 [ "$TRAVIS_PULL_REQUEST" = false ]
 
+echo "pr ok"
+
+echo "$TRAVIS_RUST_LANGUAGE =? $DOC_RUST_VERSION"
+
 [ "$TRAVIS_RUST_LANGUAGE" = "$DOC_RUST_VERSION" ]
+
+echo "lang ok"
 
 eval key=\$encrypted_${SSH_KEY_TRAVIS_ID}_key
 eval iv=\$encrypted_${SSH_KEY_TRAVIS_ID}_iv
