@@ -121,7 +121,7 @@ impl Crypter
             out_buf.set_len(outlen as usize);
         }
 
-        result = result + &*out_buf;
+        result.extend(out_buf);
         Ok(result)
     }
 }
