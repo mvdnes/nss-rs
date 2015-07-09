@@ -137,7 +137,7 @@ impl SlotInfo
         }
     }
 
-    pub fn get_mut(&self) -> *mut PK11SlotInfo
+    pub fn get_mut(&mut self) -> *mut PK11SlotInfo
     {
         self.ptr
     }

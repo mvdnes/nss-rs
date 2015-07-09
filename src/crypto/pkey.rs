@@ -75,7 +75,7 @@ impl RSAPrivateKey
         try!(::nss::init());
 
         let mut der = sec::SECItem::from_buf(data);
-        let slot = try!(pk11::SlotInfo::get_internal());
+        let mut slot = try!(pk11::SlotInfo::get_internal());
         let mut key = ptr::null_mut();
 
         let pkey = unsafe
@@ -93,7 +93,7 @@ impl RSAPrivateKey
     {
         try!(::nss::init());
 
-        let slot = try!(pk11::SlotInfo::get_internal());
+        let mut slot = try!(pk11::SlotInfo::get_internal());
         let mut param = pk11::PK11RSAGenParams { key_size_bits: key_size_bits as c_int, pe: 65537, };
         let mut pubkey = ptr::null_mut();
         let param_ptr = &mut param as *mut _ as *mut c_void;

@@ -64,7 +64,7 @@ impl Crypter
         let mut key_item = sec::SECItem::from_buf(key);
         let mut iv_item = sec::SECItem::from_buf(iv);
 
-        let slot = try!(pk11::SlotInfo::get_best(mech));
+        let mut slot = try!(pk11::SlotInfo::get_best(mech));
 
         let context = unsafe
         {
