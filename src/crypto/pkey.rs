@@ -165,6 +165,13 @@ impl RSAPrivateKey
         }
         Ok(self.pubkey.as_mut().unwrap())
     }
+
+    pub fn extract_public(&mut self) -> NSSResult<RSAPublicKey>
+    {
+        try!(self.get_public());
+        let res = ::std::mem::replace(&mut self.pubkey, None);
+        Ok(res.unwrap())
+    }
 }
 
 pub struct RSAPublicKey
