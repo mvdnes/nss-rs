@@ -13,9 +13,8 @@ fn main()
     }
 
     let mut privkey = pkey::RSAPrivateKey::gen(2048).unwrap();
-    let pubkey = privkey.get_public().unwrap();
 
-    let pub_der = pubkey.save().unwrap();
+    let pub_der = privkey.get_public().unwrap().save().unwrap();
     let priv_der = privkey.save().unwrap();
 
     let priv_path = std::path::Path::new(&*args[1]);

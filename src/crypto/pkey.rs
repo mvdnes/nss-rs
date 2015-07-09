@@ -66,6 +66,7 @@ impl RSAPadding
 pub struct RSAPrivateKey
 {
     key: pk11::PrivateKey,
+    pubkey: Option<RSAPublicKey>
 }
 
 impl RSAPrivateKey
@@ -86,7 +87,7 @@ impl RSAPrivateKey
             try!(pk11::PrivateKey::wrap(key))
         };
 
-        Ok(RSAPrivateKey { key: pkey })
+        Ok(RSAPrivateKey { key: pkey, pubkey: None })
     }
 
     pub fn gen(key_size_bits: u32) -> NSSResult<RSAPrivateKey>
@@ -107,8 +108,8 @@ impl RSAPrivateKey
                 )
         };
 
-        let _ = pk11::PublicKey::wrap(pubkey); // This ensures the correct drop of pubkey
-        Ok(RSAPrivateKey { key: privkey })
+        let rsapubkey = RSAPublicKey::from_raw(pubkey);
+        Ok(RSAPrivateKey { key: privkey, pubkey: rsapubkey.ok() })
     }
 
     pub fn save(&mut self) -> NSSResult<Vec<u8>>
@@ -154,13 +155,15 @@ impl RSAPrivateKey
         Ok(out)
     }
 
-    pub fn get_public(&mut self) -> NSSResult<RSAPublicKey>
+    pub fn get_public<'a>(&'a mut self) -> NSSResult<&'a mut RSAPublicKey>
     {
-        let mypub = unsafe
-        {
-            try!(pk11::PublicKey::wrap(pk11::SECKEY_ConvertToPublicKey(self.key.get_mut())))
-        };
-        Ok(RSAPublicKey { key: mypub })
+        if self.pubkey.is_none() {
+            self.pubkey = Some(unsafe
+            {
+                try!(RSAPublicKey::from_raw(pk11::SECKEY_ConvertToPublicKey(self.key.get_mut())))
+            });
+        }
+        Ok(self.pubkey.as_mut().unwrap())
     }
 }
 
@@ -183,6 +186,11 @@ impl RSAPublicKey
             try!(pk11::PublicKey::wrap(pk11::SECKEY_ExtractPublicKey(spki.get())))
         };
 
+        Ok(RSAPublicKey { key: key })
+    }
+
+    fn from_raw(raw: *mut pk11::SECKEYPublicKey) -> NSSResult<RSAPublicKey> {
+        let key = try!(pk11::PublicKey::wrap(raw));
         Ok(RSAPublicKey { key: key })
     }
 
