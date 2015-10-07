@@ -101,12 +101,12 @@ pub struct PK11RSAGenParams
 }
 
 // Opaque structures, with pointer references only
-#[repr(C)] pub struct PK11SlotInfo;
-#[repr(C)] pub struct PK11Context;
-#[repr(C)] pub struct PK11SymKey;
-#[repr(C)] pub struct SECKEYPrivateKey;
-#[repr(C)] pub struct SECKEYPublicKey;
-#[repr(C)] pub struct CERTSubjectPublicKeyInfo;
+#[repr(C)] pub struct PK11SlotInfo(c_void);
+#[repr(C)] pub struct PK11Context(c_void);
+#[repr(C)] pub struct PK11SymKey(c_void);
+#[repr(C)] pub struct SECKEYPrivateKey(c_void);
+#[repr(C)] pub struct SECKEYPublicKey(c_void);
+#[repr(C)] pub struct CERTSubjectPublicKeyInfo(c_void);
 
 pub struct SlotInfo
 {
